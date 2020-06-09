@@ -2,11 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on Offensive Defence</title>
-    <link>https://offensive-defence.co.uk/categories/</link>
+    <link>https://offensivedefence.co.uk/categories/</link>
     <description>Recent content in Categories on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	<atom:link href="https://offensive-defence.co.uk/categories/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://offensivedefence.co.uk/categories/index.xml" rel="self" type="application/rss+xml" />
     
     
   </channel>

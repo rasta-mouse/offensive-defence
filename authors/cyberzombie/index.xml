@@ -2,20 +2,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Offensive Defence</title>
-    <link>https://offensive-defence.co.uk/authors/cyberzombie/</link>
+    <link>https://offensivedefence.co.uk/authors/cyberzombie/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Fri, 05 Jun 2020 10:04:14 +0100</lastBuildDate>
     
-	<atom:link href="https://offensive-defence.co.uk/authors/cyberzombie/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://offensivedefence.co.uk/authors/cyberzombie/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Offensive Defence</title>
-      <link>https://offensive-defence.co.uk/posts/offensive-defence/</link>
+      <link>https://offensivedefence.co.uk/posts/offensive-defence/</link>
       <pubDate>Fri, 05 Jun 2020 10:04:14 +0100</pubDate>
       
-      <guid>https://offensive-defence.co.uk/posts/offensive-defence/</guid>
+      <guid>https://offensivedefence.co.uk/posts/offensive-defence/</guid>
       <description>So welcome along to our joint blog with @_RastaMouse @Rythmstick and @Furby, I&amp;rsquo;m @CyberZombi3 we hope to blog about all levels of Red Team and Blue teaming, our combined skillsets, areas of expertise and desire to gain knowledge from one another should provide a little something for everyone so with that said this is my first blog here, which can also can be found at cyberzombi3.co.uk
 I usually blog in the style of a basic guide, for this blog though I wanted to throw out a few suggestions around Offensive Defence (very apt don’t you think) Think how an attacker starts their mission, with some recon right.</description>
     </item>

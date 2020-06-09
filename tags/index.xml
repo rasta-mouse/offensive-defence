@@ -2,38 +2,38 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Offensive Defence</title>
-    <link>https://offensive-defence.co.uk/tags/</link>
+    <link>https://offensivedefence.co.uk/tags/</link>
     <description>Recent content in Tags on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Tue, 09 Jun 2020 13:12:56 +0100</lastBuildDate>
     
-	<atom:link href="https://offensive-defence.co.uk/tags/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://offensivedefence.co.uk/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>.net</title>
-      <link>https://offensive-defence.co.uk/tags/.net/</link>
+      <link>https://offensivedefence.co.uk/tags/.net/</link>
       <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
       
-      <guid>https://offensive-defence.co.uk/tags/.net/</guid>
+      <guid>https://offensivedefence.co.uk/tags/.net/</guid>
       <description></description>
     </item>
     
     <item>
       <title>c#</title>
-      <link>https://offensive-defence.co.uk/tags/c#/</link>
+      <link>https://offensivedefence.co.uk/tags/c#/</link>
       <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
       
-      <guid>https://offensive-defence.co.uk/tags/c#/</guid>
+      <guid>https://offensivedefence.co.uk/tags/c#/</guid>
       <description></description>
     </item>
     
     <item>
       <title>sharpsploit</title>
-      <link>https://offensive-defence.co.uk/tags/sharpsploit/</link>
+      <link>https://offensivedefence.co.uk/tags/sharpsploit/</link>
       <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
       
-      <guid>https://offensive-defence.co.uk/tags/sharpsploit/</guid>
+      <guid>https://offensivedefence.co.uk/tags/sharpsploit/</guid>
       <description></description>
     </item>
     
