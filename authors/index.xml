@@ -2,47 +2,47 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Authors on Offensive Defence</title>
-    <link>https://example.com/authors/</link>
+    <link>https://offensive-defence.co.uk/authors/</link>
     <description>Recent content in Authors on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Tue, 09 Jun 2020 13:12:56 +0100</lastBuildDate>
     
-	<atom:link href="https://example.com/authors/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://offensive-defence.co.uk/authors/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title></title>
-      <link>https://example.com/authors/rastamouse/</link>
+      <link>https://offensive-defence.co.uk/authors/rastamouse/</link>
       <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
       
-      <guid>https://example.com/authors/rastamouse/</guid>
+      <guid>https://offensive-defence.co.uk/authors/rastamouse/</guid>
       <description></description>
     </item>
     
     <item>
       <title></title>
-      <link>https://example.com/authors/cyberzombie/</link>
+      <link>https://offensive-defence.co.uk/authors/cyberzombie/</link>
       <pubDate>Fri, 05 Jun 2020 10:04:14 +0100</pubDate>
       
-      <guid>https://example.com/authors/cyberzombie/</guid>
+      <guid>https://offensive-defence.co.uk/authors/cyberzombie/</guid>
       <description></description>
     </item>
     
     <item>
       <title></title>
-      <link>https://example.com/authors/furby/</link>
+      <link>https://offensive-defence.co.uk/authors/furby/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://example.com/authors/furby/</guid>
+      <guid>https://offensive-defence.co.uk/authors/furby/</guid>
       <description></description>
     </item>
     
     <item>
       <title></title>
-      <link>https://example.com/authors/rythmstick/</link>
+      <link>https://offensive-defence.co.uk/authors/rythmstick/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://example.com/authors/rythmstick/</guid>
+      <guid>https://offensive-defence.co.uk/authors/rythmstick/</guid>
       <description></description>
     </item>
     

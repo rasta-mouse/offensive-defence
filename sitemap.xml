@@ -3,77 +3,77 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://example.com/authors/rastamouse/</loc>
+    <loc>https://offensive-defence.co.uk/authors/rastamouse/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
   </url>
   
   <url>
-    <loc>https://example.com/tags/.net/</loc>
-    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
-    <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://example.com/authors/</loc>
+    <loc>https://offensive-defence.co.uk/tags/.net/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://example.com/</loc>
+    <loc>https://offensive-defence.co.uk/authors/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://example.com/posts/</loc>
+    <loc>https://offensive-defence.co.uk/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://example.com/posts/sharpsploit-16/</loc>
-    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://example.com/tags/</loc>
+    <loc>https://offensive-defence.co.uk/posts/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://example.com/tags/c#/</loc>
+    <loc>https://offensive-defence.co.uk/posts/sharpsploit-16/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://offensive-defence.co.uk/tags/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://example.com/tags/sharpsploit/</loc>
+    <loc>https://offensive-defence.co.uk/tags/c#/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>https://example.com/authors/cyberzombie/</loc>
+    <loc>https://offensive-defence.co.uk/tags/sharpsploit/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://offensive-defence.co.uk/authors/cyberzombie/</loc>
     <lastmod>2020-06-05T10:04:14+01:00</lastmod>
   </url>
   
   <url>
-    <loc>https://example.com/posts/offensive-defence/</loc>
+    <loc>https://offensive-defence.co.uk/posts/offensive-defence/</loc>
     <lastmod>2020-06-05T10:04:14+01:00</lastmod>
   </url>
   
   <url>
-    <loc>https://example.com/authors/furby/</loc>
+    <loc>https://offensive-defence.co.uk/authors/furby/</loc>
   </url>
   
   <url>
-    <loc>https://example.com/authors/rythmstick/</loc>
+    <loc>https://offensive-defence.co.uk/authors/rythmstick/</loc>
   </url>
   
   <url>
-    <loc>https://example.com/categories/</loc>
+    <loc>https://offensive-defence.co.uk/categories/</loc>
     <priority>0</priority>
   </url>
   

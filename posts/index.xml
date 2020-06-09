@@ -2,30 +2,30 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Offensive Defence</title>
-    <link>https://example.com/posts/</link>
+    <link>https://offensive-defence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Tue, 09 Jun 2020 13:12:56 +0100</lastBuildDate>
     
-	<atom:link href="https://example.com/posts/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://offensive-defence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>SharpSploit v1.6 Updates</title>
-      <link>https://example.com/posts/sharpsploit-16/</link>
+      <link>https://offensive-defence.co.uk/posts/sharpsploit-16/</link>
       <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
       
-      <guid>https://example.com/posts/sharpsploit-16/</guid>
+      <guid>https://offensive-defence.co.uk/posts/sharpsploit-16/</guid>
       <description>Ryan Cobb has just tagged the release of SharpSploit v1.6, which comes with a number of cool changes. The most significant of which includes some very clever Dynamic Invocation functionality that TheWover has blogged about. My contributions were relatively minor and will be the subject of this post.
 Enhanced WMI Output SharpSploit has had a WMIExecute method in the SharpSploit.LateralMovement namespace for as long as I can remember. It took in a target ComputerName, a Command to execute and optional plaintext creds, but it returned a bool.</description>
     </item>
     
     <item>
       <title>Offensive Defence</title>
-      <link>https://example.com/posts/offensive-defence/</link>
+      <link>https://offensive-defence.co.uk/posts/offensive-defence/</link>
       <pubDate>Fri, 05 Jun 2020 10:04:14 +0100</pubDate>
       
-      <guid>https://example.com/posts/offensive-defence/</guid>
+      <guid>https://offensive-defence.co.uk/posts/offensive-defence/</guid>
       <description>So welcome along to our joint blog with @_RastaMouse @Rythmstick and @Furby, I&amp;rsquo;m @CyberZombi3 we hope to blog about all levels of Red Team and Blue teaming, our combined skillsets, areas of expertise and desire to gain knowledge from one another should provide a little something for everyone so with that said this is my first blog here, which can also can be found at cyberzombi3.co.uk
 I usually blog in the style of a basic guide, for this blog though I wanted to throw out a few suggestions around Offensive Defence (very apt don’t you think) Think how an attacker starts their mission, with some recon right.</description>
     </item>
