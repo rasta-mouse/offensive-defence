@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>https://example.com/authors/rastamouse/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://example.com/tags/.net/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://example.com/authors/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://example.com/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://example.com/posts/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://example.com/posts/sharpsploit-16/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://example.com/tags/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://example.com/tags/c#/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://example.com/tags/sharpsploit/</loc>
+    <lastmod>2020-06-09T13:12:56+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://example.com/authors/cyberzombie/</loc>
+    <lastmod>2020-06-05T10:04:14+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://example.com/posts/offensive-defence/</loc>
+    <lastmod>2020-06-05T10:04:14+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://example.com/authors/furby/</loc>
+  </url>
+  
+  <url>
+    <loc>https://example.com/authors/rythmstick/</loc>
+  </url>
+  
+  <url>
+    <loc>https://example.com/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+</urlset>

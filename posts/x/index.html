@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Offensive DefenceOffensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.56.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://example.com/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Offensive Defence"/>
+<meta name="twitter:description" content="So welcome along to our joint blog with @_RastaMouse @Rythmstick and @Furby, I&rsquo;m @CyberZombi3 we hope to blog about all levels of Red Team and Blue teaming, our combined skillsets, areas of expertise and desire to gain knowledge from one another should provide a little something for everyone so with that said this is my first blog here, which can also can be found at cyberzombi3.co.uk
+I usually blog in the style of a basic guide, for this blog though I wanted to throw out a few suggestions around Offensive Defence (very apt don’t you think) Think how an attacker starts their mission, with some recon right."/>
+
+    <meta property="og:title" content="Offensive Defence" />
+<meta property="og:description" content="So welcome along to our joint blog with @_RastaMouse @Rythmstick and @Furby, I&rsquo;m @CyberZombi3 we hope to blog about all levels of Red Team and Blue teaming, our combined skillsets, areas of expertise and desire to gain knowledge from one another should provide a little something for everyone so with that said this is my first blog here, which can also can be found at cyberzombi3.co.uk
+I usually blog in the style of a basic guide, for this blog though I wanted to throw out a few suggestions around Offensive Defence (very apt don’t you think) Think how an attacker starts their mission, with some recon right." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.com/posts/x/" />
+<meta property="article:published_time" content="2020-06-05T10:04:14+01:00" />
+<meta property="article:modified_time" content="2020-06-05T10:04:14+01:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://example.com"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Offensive Defence</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://example.com/authors/cyberzombie/">CyberZombi3</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Jun 5, 2020
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          3 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      
+
+<p>So welcome along to our joint blog with <a href="/authors/rastamouse/">@_RastaMouse</a> <a href="/authors/rythmstick/">@Rythmstick</a> and <a href="/authors/furby/">@Furby</a>, I&rsquo;m <a href="/authors/cyberzombie/">@CyberZombi3</a> we hope to blog about all levels of Red Team and Blue teaming, our combined skillsets, areas of expertise and desire to gain knowledge from one another should provide a little something for everyone so with that said this is my first blog here, which can also can be found at  <a href="https://cyberzombi3.co.uk/">cyberzombi3.co.uk</a></p>
+
+<p>I usually blog in the style of a basic guide, for this blog though I wanted to throw out a few suggestions around Offensive Defence (very apt don’t you think) Think how an attacker starts their mission, with some recon right. So wouldn’t it be great to have an early warning system for a potential phishing attack, maybe a password spray against your O356 environment. How do we go about this ?</p>
+
+<h2 id="fake-profiles">Fake Profiles</h2>
+
+<p>What we want to do is setup a fake profile and also a blank user account, I don’t believe you can create a Linkedin profile as it would be against their terms and conditions however there’s nothing to say that you can have a fake COO or another high value target listed on your own corporate website. To sit along side this you would also have an AD user for the fake target. It’s worth mentioning that you should maybe configure the account logon hours to zero, give the account access to as little as possible just to be on the safe side.</p>
+
+<p>What you can then do with your logging / monitoring platform of choice is to monitor for emails being sent to that user, also monitor for login attempts via your O365 system and or others.</p>
+
+<h2 id="high-value-ad-account">High Value AD Account</h2>
+
+<p>Similar to the above, create an AD account that looks highly valuable to an attacker, think something along the lines of the name SuperAdmin, again monitor for login attempts of this user. The bonus with this one is that if there were some potential malicious activity you would have to assume that the attacker is already on your systems, be it an external attacker or a malicious insider. You would also want your server admins and potentially other admins to be aware of this account and forbidden from using it. This would help with any false positives.</p>
+
+<h2 id="fake-news">Fake News</h2>
+
+<p>You could also give yourselves an idea of whether or not your website is being actively scanned around the times or merges / takeovers or some other exciting time for the business.</p>
+
+<p>On your corporate website in the latest new section or deeper within the site you could list some exciting new projects with code names, think Greek gods and names like “The Messiah Project” it peaks an interest. Again via your monitoring platform of choice you would look out for these codenames, if you receive an alert you can be sure that your sure that your website has been scanned and that someone is looking to collect further information on it.</p>
+
+<p>I guess the limits are kind of endless but I just wanted to bring your attention to such methods as I don’t think I have come across to many posts along these lines, be creative. There’s always the good old honeypots too.
+I hope this was of some help to someone out there.</p>
+
+<p>Thanks</p>
+
+<p>CyberZombi3</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
