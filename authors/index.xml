@@ -5,10 +5,19 @@
     <link>https://offensivedefence.co.uk/authors/</link>
     <description>Recent content in Authors on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 10 Jun 2020 14:07:13 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 16 Jun 2020 10:52:27 +0100</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/authors/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Rasta Mouse</title>
+      <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
+      <pubDate>Tue, 16 Jun 2020 10:52:27 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/authors/rastamouse/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Furby</title>
@@ -16,15 +25,6 @@
       <pubDate>Wed, 10 Jun 2020 14:07:13 +0100</pubDate>
       
       <guid>https://offensivedefence.co.uk/authors/furby/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Rasta Mouse</title>
-      <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
-      <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
-      
-      <guid>https://offensivedefence.co.uk/authors/rastamouse/</guid>
       <description></description>
     </item>
     

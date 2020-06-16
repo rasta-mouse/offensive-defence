@@ -5,10 +5,20 @@
     <link>https://offensivedefence.co.uk/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 10 Jun 2020 14:07:13 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 16 Jun 2020 10:52:27 +0100</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Making AMSI Jump</title>
+      <link>https://offensivedefence.co.uk/posts/making-amsi-jump/</link>
+      <pubDate>Tue, 16 Jun 2020 10:52:27 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/making-amsi-jump/</guid>
+      <description>Since 3.13, Cobalt Strike has had a Malleable C2 option called amsi_disable. This directive tells Beacon to patch the AmsiScanBuffer function in the host process prior to injecting post-ex capabilities such as powerpick and execute-assembly. This limits AMSI&amp;rsquo;s visibility of said process and (hopefully) prevents the PowerShell / .NET assemblies being executed from being scanned.
+One set of workflows that amsi_disable does not apply to, are the new (as of 4.</description>
+    </item>
     
     <item>
       <title>Is the grass greener on the other side?</title>
