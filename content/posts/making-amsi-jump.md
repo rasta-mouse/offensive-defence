@@ -36,11 +36,11 @@ Beacon Remote Exploits
 
 When lateral movement via `winrm` / `winrm64` is blocked by AMSI, the output very helpfully lets us know that's what's happening.
 
-![winrm64-blocked](/making-amsi-jump/winrm64-blocked.png "winrm64 blocked")
+![winrm64-blocked](/images/making-amsi-jump/winrm64-blocked.png "winrm64 blocked")
 
 `psexec_psh` is understandably less helpful.  We see a service has been created and started, but we can't connect to the target.
 
-![psexec_psh-blocked](/making-amsi-jump/psexec_psh-blocked.png "psexec_psh blocked")
+![psexec_psh-blocked](/images/making-amsi-jump/psexec_psh-blocked.png "psexec_psh blocked")
 
 ## Resource Kit & AMSITrigger
 
