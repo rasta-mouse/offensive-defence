@@ -3,7 +3,7 @@
   <head>
     <title>SharpSploit v1.6 Updates - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.56.0" />
+    <meta name="generator" content="Hugo 0.74.2" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -66,75 +66,58 @@ Enhanced WMI Output SharpSploit has had a WMIExecute method in the SharpSploit.L
           <a class="tag" href="https://offensivedefence.co.uk/tags/c#/">c#</a><a class="tag" href="https://offensivedefence.co.uk/tags/.net/">.net</a><a class="tag" href="https://offensivedefence.co.uk/tags/sharpsploit/">sharpsploit</a></div></div>
     </header>
     <div class="post-content">
-      
-
-<p><a href="https://twitter.com/cobbr_io">Ryan Cobb</a> has just tagged the release of SharpSploit <a href="https://github.com/cobbr/SharpSploit/releases/tag/v1.6">v1.6</a>, which comes with a number of cool changes.  The most significant of which includes some very clever Dynamic Invocation functionality that <a href="https://twitter.com/TheRealWover">TheWover</a> has <a href="https://thewover.github.io/Dynamic-Invoke/">blogged about</a>.  My contributions were relatively minor and will be the subject of this post.</p>
-
+      <p><a href="https://twitter.com/cobbr_io">Ryan Cobb</a> has just tagged the release of SharpSploit <a href="https://github.com/cobbr/SharpSploit/releases/tag/v1.6">v1.6</a>, which comes with a number of cool changes.  The most significant of which includes some very clever Dynamic Invocation functionality that <a href="https://twitter.com/TheRealWover">TheWover</a> has <a href="https://thewover.github.io/Dynamic-Invoke/">blogged about</a>.  My contributions were relatively minor and will be the subject of this post.</p>
 <h2 id="enhanced-wmi-output">Enhanced WMI Output</h2>
-
 <p>SharpSploit has had a <code>WMIExecute</code> method in the <code>SharpSploit.LateralMovement</code> namespace for as long as I can remember.  It took in a target <code>ComputerName</code>, a <code>Command</code> to execute and optional plaintext creds, but it returned a <code>bool</code>.</p>
-
-<pre><code class="language-c#">public static bool WMIExecute(string ComputerName, string Command, string Username = &quot;&quot;, string Password = &quot;&quot;)
-</code></pre>
-
-<p>The remaining method looked a bit like this:</p>
-
-<pre><code class="language-c#">try
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">bool</span> WMIExecute(<span style="color:#66d9ef">string</span> ComputerName, <span style="color:#66d9ef">string</span> Command, <span style="color:#66d9ef">string</span> Username = <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#66d9ef">string</span> Password = <span style="color:#e6db74">&#34;&#34;</span>)
+</code></pre></div><p>The remaining method looked a bit like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">try</span>
 {
-    // do the WMI magic
-
-    Console.WriteLine(&quot;Win32_Process Create returned: &quot; + outParams[&quot;returnValue&quot;].ToString());
-    Console.WriteLine(&quot;ProcessID: &quot; + outParams[&quot;processId&quot;].ToString());
-    return true;
+    <span style="color:#75715e">// do the WMI magic
+</span><span style="color:#75715e"></span>
+    Console.WriteLine(<span style="color:#e6db74">&#34;Win32_Process Create returned: &#34;</span> + outParams[<span style="color:#e6db74">&#34;returnValue&#34;</span>].ToString());
+    Console.WriteLine(<span style="color:#e6db74">&#34;ProcessID: &#34;</span> + outParams[<span style="color:#e6db74">&#34;processId&#34;</span>].ToString());
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
 }
-catch
+<span style="color:#66d9ef">catch</span>
 {
-    Console.Error.WriteLine(&quot;WMI Exception:&quot; + e.Message);
-    return false;
+    Console.Error.WriteLine(<span style="color:#e6db74">&#34;WMI Exception:&#34;</span> + e.Message);
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>;
 }
-</code></pre>
-
-<p>There were a few issues with this, at least from my perspective.</p>
-
+</code></pre></div><p>There were a few issues with this, at least from my perspective.</p>
 <ol>
-<li><p>It&rsquo;s writing to the application&rsquo;s console.</p>
-
-<p>We may not have visibility of the console if SharpSploit is being executed in a RAT such as Convenant&rsquo;s Grunt and if we&rsquo;ve injected the RAT into a process that doesn&rsquo;t even have a console, this may crash the process.</p></li>
-
-<li><p>There is no validation on the <code>returnValue</code> before returning <code>true</code>.</p>
-
-<p>Veterans of WMI will know that there are a few <a href="https://docs.microsoft.com/en-us/windows/win32/wmisdk/wmi-return-codes">return codes</a> that are possible and not all of them indicate successful execution.  This is particularly troublesome when built into places like Covenant&rsquo;s <a href="https://github.com/cobbr/Covenant/blob/master/Covenant/Data/Tasks/SharpSploit.LateralMovement.yaml#L24-L31">WMI lateral movement task</a>, as the task can report execution was successful when it wasn&rsquo;t.</p></li>
+<li>
+<p>It&rsquo;s writing to the application&rsquo;s console.</p>
+<p>We may not have visibility of the console if SharpSploit is being executed in a RAT such as Convenant&rsquo;s Grunt and if we&rsquo;ve injected the RAT into a process that doesn&rsquo;t even have a console, this may crash the process.</p>
+</li>
+<li>
+<p>There is no validation on the <code>returnValue</code> before returning <code>true</code>.</p>
+<p>Veterans of WMI will know that there are a few <a href="https://docs.microsoft.com/en-us/windows/win32/wmisdk/wmi-return-codes">return codes</a> that are possible and not all of them indicate successful execution.  This is particularly troublesome when built into places like Covenant&rsquo;s <a href="https://github.com/cobbr/Covenant/blob/master/Covenant/Data/Tasks/SharpSploit.LateralMovement.yaml#L24-L31">WMI lateral movement task</a>, as the task can report execution was successful when it wasn&rsquo;t.</p>
+</li>
 </ol>
-
 <p>To try and improve this, the method was reworked to return a <code>SharpSploitResultList</code> of type <code>WmiResult</code>.  <code>WmiResult</code> is a simple class that contains two properties for the actual <code>ReturnValue</code> and <code>ProcessID</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">SharpSploitResultList&lt;WmiResult&gt; wmiResult = <span style="color:#66d9ef">new</span> SharpSploitResultList&lt;WmiResult&gt;();
 
-<pre><code class="language-c#">SharpSploitResultList&lt;WmiResult&gt; wmiResult = new SharpSploitResultList&lt;WmiResult&gt;();
-
-try
+<span style="color:#66d9ef">try</span>
 {
-    // do the WMI magic
-
-    wmiResult.Add(new WmiResult
+    <span style="color:#75715e">// do the WMI magic
+</span><span style="color:#75715e"></span>
+    wmiResult.Add(<span style="color:#66d9ef">new</span> WmiResult
     {
-        ReturnValue = outParams[&quot;returnValue&quot;].ToString(),
-        ProcessID = outParams[&quot;processId&quot;].ToString()
+        ReturnValue = outParams[<span style="color:#e6db74">&#34;returnValue&#34;</span>].ToString(),
+        ProcessID = outParams[<span style="color:#e6db74">&#34;processId&#34;</span>].ToString()
     });
 }
-catch { }
+<span style="color:#66d9ef">catch</span> { }
 
-return wmiResult;
-</code></pre>
-
-<p>And this is how it looks:</p>
-
-<pre><code class="language-text">C:\&gt;WmiDemo.exe WIN-CJ8120QPH84 C:\Windows\System32\win32calc.exe
+<span style="color:#66d9ef">return</span> wmiResult;
+</code></pre></div><p>And this is how it looks:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;WmiDemo.exe WIN-CJ8120QPH84 C:\Windows\System32\win32calc.exe
 
 ReturnValue  ProcessID
 -----------  ---------
 0            1196
-</code></pre>
-
-<pre><code class="language-text">PS C:\Users\Administrator&gt; hostname
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\Users\Administrator&gt; hostname
 WIN-CJ8120QPH84
 
 PS C:\Users\Administrator&gt; Get-Process -Id 1196
@@ -142,51 +125,28 @@ PS C:\Users\Administrator&gt; Get-Process -Id 1196
 Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
 -------  ------    -----      -----     ------     --  -- -----------
     125      13     4792      11804       0.03   1196   0 win32calc
-</code></pre>
-
-<h2 id="reverse-port-forwarding">Reverse Port Forwarding</h2>
-
+</code></pre></div><h2 id="reverse-port-forwarding">Reverse Port Forwarding</h2>
 <p>The larger change on my part came with the addition of the <code>SharpSploit.Pivoting</code> namespace and new methods for creating, listing and stopping reverse port forwards.  I won&rsquo;t cover the code in intricate detail - just some usage examples.</p>
-
 <h3 id="starting">Starting</h3>
-
 <p>Creating a new reverse port forward is as easy as:</p>
-
-<pre><code class="language-c#">ReversePortForwarding.CreateReversePortForward(8080, &quot;httpbin.org&quot;, 80);
-</code></pre>
-
-<p>Where <code>8080</code> is the bind port, <code>httpbin.org</code> is the forward host (IP addresses and domain names are supported) and <code>80</code> is the forward port. This method returns a <code>bool</code>.</p>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">ReversePortForwarding.CreateReversePortForward(<span style="color:#ae81ff">8080</span>, <span style="color:#e6db74">&#34;httpbin.org&#34;</span>, <span style="color:#ae81ff">80</span>);
+</code></pre></div><p>Where <code>8080</code> is the bind port, <code>httpbin.org</code> is the forward host (IP addresses and domain names are supported) and <code>80</code> is the forward port. This method returns a <code>bool</code>.</p>
 <p>If successful, you will see port <code>8080</code> bound on the host.</p>
-
-<pre><code class="language-text">C:\&gt;netstat -anp tcp | findstr 8080
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;netstat -anp tcp | findstr 8080
   TCP    0.0.0.0:8080           0.0.0.0:0              LISTENING
-</code></pre>
-
-<h3 id="listing">Listing</h3>
-
+</code></pre></div><h3 id="listing">Listing</h3>
 <p>You can list current reverse port forwards with:</p>
-
-<pre><code class="language-c#">var list = ReversePortForwarding.GetReversePortForwards();
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> list = ReversePortForwarding.GetReversePortForwards();
 Console.WriteLine(list);
-</code></pre>
-
-<p>This returns a <code>SharpSploitResultList</code> of type <code>ReversePortFwdResult</code>. This class contains the <code>BindAddress</code>, <code>BindPort</code>, <code>ForwardAddress</code> and <code>ForwardPort</code>.</p>
-
-<pre><code class="language-text">BindAddresses  BindPort  ForwardAddress  ForwardPort
+</code></pre></div><p>This returns a <code>SharpSploitResultList</code> of type <code>ReversePortFwdResult</code>. This class contains the <code>BindAddress</code>, <code>BindPort</code>, <code>ForwardAddress</code> and <code>ForwardPort</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">BindAddresses  BindPort  ForwardAddress  ForwardPort
 -------------  --------  --------------  -----------
 0.0.0.0        8080      52.6.108.56     80
-</code></pre>
-
-<p>This test machine cannot talk to the Internet directly.</p>
-
-<pre><code class="language-text">PS C:\Users\Administrator&gt; curl http://httpbin.org/base64/SFRUUEJJTiBpcyBhd2Vzb21l
-curl : The remote name could not be resolved: 'httpbin.org'
-</code></pre>
-
-<p>But it can via the reverse port forward.</p>
-
-<pre><code class="language-text">PS C:\Users\Administrator&gt; $data = curl http://DESKTOP-U3N86EQ:8080/base64/SFRUUEJJTiBpcyBhd2Vzb21l
+</code></pre></div><p>This test machine cannot talk to the Internet directly.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\Users\Administrator&gt; curl http://httpbin.org/base64/SFRUUEJJTiBpcyBhd2Vzb21l
+curl : The remote name could not be resolved: &#39;httpbin.org&#39;
+</code></pre></div><p>But it can via the reverse port forward.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\Users\Administrator&gt; $data = curl http://DESKTOP-U3N86EQ:8080/base64/SFRUUEJJTiBpcyBhd2Vzb21l
 PS C:\Users\Administrator&gt; $data.RawContent
 HTTP/1.1 200 OK
 Connection: keep-alive
@@ -198,19 +158,11 @@ Date: Tue, 09 Jun 2020 13:53:48 GMT
 Server: gunicorn/19.9.0
 
 HTTPBIN is awesome
-</code></pre>
-
-<h3 id="deleting">Deleting</h3>
-
+</code></pre></div><h3 id="deleting">Deleting</h3>
 <p>There are two methods for removing reverse port forwards.  <code>FlushReversePortFowards</code> (returns <code>void</code>) will indiscriminately remove all of them and <code>DeleteReversePortForward</code> (returns <code>bool</code>) will remove a single reverse port forward by its bind port.</p>
-
-<pre><code class="language-c#">ReversePortForwarding.DeleteReversePortForward(8080);
-</code></pre>
-
-<p>Obviously when the reverse port forward is stopped, the port is released.</p>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">ReversePortForwarding.DeleteReversePortForward(<span style="color:#ae81ff">8080</span>);
+</code></pre></div><p>Obviously when the reverse port forward is stopped, the port is released.</p>
 <h2 id="conclusion">Conclusion</h2>
-
 <p>The updates to WMI are more quality of life changes and should be reflected in the relevant Covenant Tasks soon.  I hope that the new reverse port forwarding can help bring some additional capabilities to similar tools that leverage SharpSploit.</p>
 
     </div>

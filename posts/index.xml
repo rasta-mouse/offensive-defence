@@ -1,14 +1,23 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Offensive Defence</title>
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 16 Jun 2020 10:52:27 +0100</lastBuildDate>
+    <lastBuildDate>Sat, 07 Nov 2020 11:54:14 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV</title>
+      <link>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</link>
+      <pubDate>Sat, 07 Nov 2020 11:54:14 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</guid>
+      <description>Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution. AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools. However, it&amp;rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&amp;rsquo;t have the skills or knowledge to make the necesary modifications.</description>
+    </item>
     
     <item>
       <title>Making AMSI Jump</title>

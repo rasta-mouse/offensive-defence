@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Authors on Offensive Defence</title>
     <link>https://offensivedefence.co.uk/authors/</link>
     <description>Recent content in Authors on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 16 Jun 2020 10:52:27 +0100</lastBuildDate>
+    <lastBuildDate>Sat, 07 Nov 2020 11:54:14 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/authors/index.xml" rel="self" type="application/rss+xml" />
     
@@ -13,7 +13,7 @@
     <item>
       <title>Rasta Mouse</title>
       <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
-      <pubDate>Tue, 16 Jun 2020 10:52:27 +0100</pubDate>
+      <pubDate>Sat, 07 Nov 2020 11:54:14 +0000</pubDate>
       
       <guid>https://offensivedefence.co.uk/authors/rastamouse/</guid>
       <description></description>

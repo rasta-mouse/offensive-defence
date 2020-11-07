@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.74.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV"/>
+<meta name="twitter:description" content="Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution. AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools. However, it&rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&rsquo;t have the skills or knowledge to make the necesary modifications."/>
+
+    <meta property="og:title" content="Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV" />
+<meta property="og:description" content="Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution. AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools. However, it&rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&rsquo;t have the skills or knowledge to make the necesary modifications." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/covenant-profiles-templates/" />
+<meta property="article:published_time" content="2020-11-07T11:54:14+00:00" />
+<meta property="article:modified_time" content="2020-11-07T11:54:14+00:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Nov 7, 2020
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          4 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <p>Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution.  AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools.  However, it&rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&rsquo;t have the skills or knowledge to make the necesary modifications.</p>
+<p>This holds true for Covenant&rsquo;s Windows implant - Grunts.</p>
+<p><img src="/images/covenant-profiles-templates/default-launcher.png" alt="grunt-blocked" title="Default PowerShell Launcher blocked"></p>
+<p><a href="https://twitter.com/cobbr_io">Ryan&rsquo;s</a> position is (quite rightly) that circumventing AV is a step that the user is responsible for. It is not the goal of the project to provide undetectable implants or magic &ldquo;AV bypass&rdquo; buttons. However, Covenant does provide various means of changing the default Grunt behaviour, which can be leveraged in such a way as to remove the indicators that a particular security product is finding.</p>
+<p>This post will look at <strong>Traffic Profiles</strong> and <strong>Grunt Templates</strong>.</p>
+<p>Instead of making modifications willy-nilly, we need to know (with a reasonable degree of accuracy) which part(s) of the Grunt Stager get detected.  For that I use <a href="https://github.com/rasta-mouse/ThreatCheck">ThreatCheck</a>, which will split a sample into multiple chunks and submit them either to <code>AMSI</code> or Defender&rsquo;s <code>MpCmdRun</code> utility.</p>
+<h2 id="traffic-profiles">Traffic Profiles</h2>
+<p>Create a new listener with one of the default profiles, then generate and download the associated Binary Launcher to a folder that has an AV exclusion (so that it doesn&rsquo;t get removed instantly).</p>
+<p>Next, scan that Stager with ThreatCheck:  <code>ThreatCheck.exe -f C:\Tools\GruntHTTP.exe</code></p>
+<p><img src="/images/covenant-profiles-templates/threatcheck-default-launcher.png" alt="threatcheck" title="ThreatCheck default stager"></p>
+<p>ThreatCheck dumps a 256-byte hex view up from the end of the offending bytes, so the &ldquo;interesting&rdquo; bytes are always at the bottom.  Be aware that if the actual bad bytes are greater than 256 in length, it will be truncated in this view.  In any case, we see here the connect address for the listener, followed by the base64 encoded string <code>VXNlci1BZ2VudA==</code> with is <code>User-Agent</code>.</p>
+<p>These request headers are part of the traffic profile that we created our listener with.  If we go into the profile editor, we&rsquo;re free to add, remove, change these as we see fit.</p>
+<p><img src="/images/covenant-profiles-templates/default-request-headers.png" alt="defaultheaders" title="Default HTTP headers"></p>
+<p>I opted to insert an additional header at the top so that the base64 encoded string for User-Agent was not appearing directly after the connect URL.  There are plenty of valid headers to <a href="https://en.wikipedia.org/wiki/List_of_HTTP_header_fields">choose from</a>.</p>
+<p><img src="/images/covenant-profiles-templates/new-request-headers.png" alt="newheader" title="New HTTP header"></p>
+<p>Now when we regenerate the Binary Launcher and scan it with ThreatCheck, that particular detection is gone, but we get another one.  ThreatCheck will only show one detection at a time, so this is certainly an iterative process.</p>
+<p><img src="/images/covenant-profiles-templates/threatcheck-message-format.png" alt="threatcheck" title="ThreatCheck Message Format"></p>
+<h2 id="grunt-templates">Grunt Templates</h2>
+<p>This detection comes from the StagerCode in the Grunt template, rather than the traffic profile.</p>
+<p><img src="/images/covenant-profiles-templates/stagercode-message-format.png" alt="messageformat" title="StagerCode Message Format"></p>
+<p>On the assumption that this is a simple string detection, we can try and circumvent it using concatenation or other string-manipulations.  I replaced line 43 with <code>string MessageFormat = GetMessageFormat;</code> and inserted a new method for retrieving the string via a string builder.</p>
+<pre><code>public static string GetMessageFormat
+{
+    get
+    {
+        var sb = new StringBuilder(@&quot;{{&quot;&quot;GUID&quot;&quot;:&quot;&quot;{0}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;Type&quot;&quot;:{1},&quot;);
+        sb.Append(@&quot;&quot;&quot;Meta&quot;&quot;:&quot;&quot;{2}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;IV&quot;&quot;:&quot;&quot;{3}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;EncryptedMessage&quot;&quot;:&quot;&quot;{4}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;HMAC&quot;&quot;:&quot;&quot;{5}&quot;&quot;}}&quot;);
+        return sb.ToString();
+    }
+}
+</code></pre><p>Regenerate the stager and this time we have no detections from ThreatCheck.</p>
+<pre><code>ThreatCheck.exe -f C:\Users\Rasta\Downloads\GruntHTTP.exe
+[+] No threat found!
+[*] Run time: 0.23s
+</code></pre><p>With a feeling of elation we run the Stager, but it seems to break at Stage2. So what&rsquo;s going on here?</p>
+<p><img src="/images/covenant-profiles-templates/stage2-grunt.png" alt="stage2" title="Stage2 Grunt"></p>
+<p>Well, this machine has .NET Framework 4.8 installed so AMSI is scanning content being passed into <code>Assembly.Load()</code>. This is the penultimate instruction the Stager performs before passing control to the full Grunt stage.</p>
+<pre><code>Assembly gruntAssembly = Assembly.Load(DecryptedAssembly);
+gruntAssembly.GetTypes()[0].GetMethods()[0].Invoke(null, new Object[] { CovenantURI, CovenantCertHash, GUID, SessionKey });
+</code></pre><p>So something in that final stage is being flagged by AMSI and is being prevented from loading.  It turns out that the ExecutorCode in the Grunt template has the same message format string that we changed in the StagerCode.</p>
+<p><img src="/images/covenant-profiles-templates/executorcode-message-format.png" alt="executor" title="Executor Message Format"></p>
+<p>I swapped this for the same getter as in the Stager:</p>
+<pre><code>private static string GruntEncryptedMessageFormat
+{
+    get
+    {
+        var sb = new StringBuilder(@&quot;{{&quot;&quot;GUID&quot;&quot;:&quot;&quot;{0}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;Type&quot;&quot;:{1},&quot;);
+        sb.Append(@&quot;&quot;&quot;Meta&quot;&quot;:&quot;&quot;{2}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;IV&quot;&quot;:&quot;&quot;{3}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;EncryptedMessage&quot;&quot;:&quot;&quot;{4}&quot;&quot;,&quot;);
+        sb.Append(@&quot;&quot;&quot;HMAC&quot;&quot;:&quot;&quot;{5}&quot;&quot;}}&quot;);
+        return sb.ToString();
+    }
+}
+</code></pre><p>Et voila.</p>
+<p><img src="/images/covenant-profiles-templates/binary-grunt.png" alt="binary" title="Binary Grunt"></p>
+<p>Because all the launchers are derived from the same source you may find that others just start working (such as the PowerShell launcher).  Other launchers, like the MSBuild may have additional indicators that you have to work around.</p>
+<p><img src="/images/covenant-profiles-templates/powershell-grunt.png" alt="powershell" title="PowerShell Grunt"></p>
+<h2 id="conclusion">Conclusion</h2>
+<p>This post has demonstrated how to use the Covenant Traffic Profiles and Grunt Templates to avoid detections by Windows Defender (both on disk and in memory), without relying on code execution-based bypassed such as patching the AmsiScanBuffer exported function.</p>
+<p>Modifying the traffic profile may provide an additional advantage of avoiding network-based defensive solutions such as IDS/IPS.</p>
+<p>The same methodology can be extended to avoid signatures of other AV engines and for other Grunt Launchers.</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
