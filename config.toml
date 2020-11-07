@@ -35,3 +35,6 @@ paginate = 5
   author = "authors"
   tag = "tags"
   category = "categories"
+
+[markup.goldmark.renderer]
+unsafe= true
