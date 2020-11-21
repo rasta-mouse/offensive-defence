@@ -2,7 +2,7 @@ baseURL = "https://offensivedefence.co.uk"
 title = "Offensive Defence"
 themesDir = "themes"
 theme = "m10c"
-paginate = 5
+paginate = 10
 
 [params]
   description = "\"The hand which strikes also blocks.\""
