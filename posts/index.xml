@@ -5,10 +5,20 @@
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Fri, 20 Nov 2020 16:22:10 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 02 Dec 2020 10:52:26 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>D/Invokify PPID Spoofy &amp; BlockDLLs</title>
+      <link>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</link>
+      <pubDate>Wed, 02 Dec 2020 10:52:26 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</guid>
+      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).
+This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
+    </item>
     
     <item>
       <title>Module Stomping in C#</title>

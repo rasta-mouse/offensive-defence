@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>D/Invokify PPID Spoofy &amp; BlockDLLs - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.74.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="D/Invokify PPID Spoofy &amp; BlockDLLs"/>
+<meta name="twitter:description" content="Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).
+This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a ."/>
+
+    <meta property="og:title" content="D/Invokify PPID Spoofy &amp; BlockDLLs" />
+<meta property="og:description" content="Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).
+This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a ." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/" />
+<meta property="article:published_time" content="2020-12-02T10:52:26+00:00" />
+<meta property="article:modified_time" content="2020-12-02T10:52:26+00:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">D/Invokify PPID Spoofy &amp; BlockDLLs</h1>
+      <div class="post-meta">
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Dec 2, 2020
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          5 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <h2 id="intro">Intro</h2>
+<p>The <code>EXTENDED_STARTUPINFO_PRESENT</code> process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs.  A common use case for attackers and malware is to specify a <code>PROC_THREAD_ATTRIBUTE_PARENT_PROCESS</code> attribute (for PPID spoofing) and a <code>PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY</code> attribute (for BlockDLLs).</p>
+<p>This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to <a href="https://thewover.github.io/Dynamic-Invoke/">D/Invoke</a>.  D/Invoke has numerous <a href="https://youtu.be/FuxpMXTgV9s">advantages</a> over P/Invoke (from a .NET tradecraft perspective), so &ldquo;porting&rdquo; C# tooling from P/Invoke to D/Invoke is quite attractive.</p>
+<h2 id="pinvoke">P/Invoke</h2>
+<p>Using P/Invoke, the process would go something like this:</p>
+<ol>
+<li>Import <code>kernel32.dll</code>.</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[DllImport(&#34;kernel32.dll&#34;)]</span>
+<span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> InitializeProcThreadAttributeList(
+    IntPtr lpAttributeList,
+    <span style="color:#66d9ef">int</span> dwAttributeCount,
+    <span style="color:#66d9ef">int</span> dwFlags,
+    <span style="color:#66d9ef">ref</span> IntPtr lpSize);
+</code></pre></div><ol start="2">
+<li>Create a variable to store the required buffer size.</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> lpSize = IntPtr.Zero;
+</code></pre></div><ol start="3">
+<li>Call <code>InitializeProcThreadAttributeList</code></li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">InitializeProcThreadAttributeList(
+    IntPtr.Zero,
+    <span style="color:#ae81ff">2</span>,
+    <span style="color:#ae81ff">0</span>,
+    <span style="color:#66d9ef">ref</span> lpSize);
+</code></pre></div><p><code>lpSize</code> will now hold the buffer size required to hold a list with <code>2</code> attributes.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">lpSize
+0x0000000000000048
+</code></pre></div><h2 id="dinvoke">D/Invoke</h2>
+<p>To do the same in D/Invoke, we:</p>
+<ol>
+<li>Define the delegate for <code>InitializeProcThreadAttributeList</code></li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+<span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">bool</span> InitializeProcThreadAttributeList(
+    IntPtr lpAttributeList,
+    <span style="color:#66d9ef">int</span> dwAttributeCount,
+    <span style="color:#66d9ef">int</span> dwFlags,
+    <span style="color:#66d9ef">ref</span> IntPtr lpSize);
+</code></pre></div><ol start="2">
+<li>Find the pointer to this function in <code>kernel32.dll</code></li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> ptr = Generic.GetLibraryAddress(<span style="color:#e6db74">&#34;kernel32.dll&#34;</span>, <span style="color:#e6db74">&#34;InitializeProcThreadAttributeList&#34;</span>);
+</code></pre></div><ol start="3">
+<li>Marshal that pointer to the delegate</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> initProcThreadAttributeList = Marshal.GetDelegateForFunctionPointer(ptr,
+    <span style="color:#66d9ef">typeof</span>(InitializeProcThreadAttributeList)) <span style="color:#66d9ef">as</span> InitializeProcThreadAttributeList;
+</code></pre></div><p>However, if we then tried to call this function, it would crash.</p>
+<p><img src="/images/dinvoke-ppid-blockdlls/dinvoke-crash.png" alt="" title="D/Invoke Crash"></p>
+<h2 id="the-bug">The Bug</h2>
+<p>The reason for this turned out to be a bug in D/Invoke&rsquo;s API resolution (the same bug is also in SharpSploit), that I had previously <a href="https://github.com/TheWover/DInvoke/issues/12">raised</a>.  My understanding of API Sets is negligable at best - I believe the purpose is to provide some separation between API implementions for different versions of Windows and other devices (such as HoloLens and Xbox) to determine whether a particular API is a) available and b) where the implementation is.</p>
+<p>In this case, we&rsquo;re looking up <code>InitializeProcThreadAttributeList</code> within <code>kernel32</code> and it&rsquo;s <em>forwarding</em> to a different place - the issue being, D/Invoke was never following the chain and is therefore pointing to just a string in memory rather than an actual API implementation.</p>
+<p><img src="/images/dinvoke-ppid-blockdlls/api-resolution.png" alt="" title="API Resolution"></p>
+<p><a href="https://twitter.com/TheRealWover">TheWover</a> pushed a <a href="https://github.com/TheWover/DInvoke/commit/af9f86984a2ce329cb44a97459592f0b191fe252">fix</a> to dev that we can now test.</p>
+<p><a href="https://twitter.com/Jean_Maes_1994">Jean-François Maes</a> was also having a play with this fix, and suggested that I use D/Invoke&rsquo;s <code>DynamicAPIInvoke</code> as a more convenient way to call delegates and marshal the necessary data.</p>
+<h2 id="dynamicapiinvoke">DynamicAPIInvoke</h2>
+<p>This method invokes an arbitrary function from a DLL - we must provide the name of the DLL and function, the delegate, any parameters, and whether or not to resolve API forwards (an optional overload that I added, but one that I expect will appear in the repo soon).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> funcParms = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[]
+{
+    IntPtr.Zero,
+    <span style="color:#ae81ff">2</span>,
+    <span style="color:#ae81ff">0</span>,
+    IntPtr.Zero <span style="color:#75715e">// this will become populated with the lpSize
+</span><span style="color:#75715e"></span>};
+
+Generic.DynamicAPIInvoke(
+    <span style="color:#e6db74">&#34;kernel32.dll&#34;</span>,
+    <span style="color:#e6db74">&#34;InitializeProcThreadAttributeList&#34;</span>,
+    <span style="color:#66d9ef">typeof</span>(InitializeProcThreadAttributeList),
+    <span style="color:#66d9ef">ref</span> funcParms,
+    <span style="color:#66d9ef">true</span> <span style="color:#75715e">// resolve API forwards
+</span><span style="color:#75715e"></span>    );
+</code></pre></div><p>When this method returns, the 3rd index will be populated with the <code>lpSize</code> we need.  Notice how we don&rsquo;t need to mess with manually specifying it as a <code>ref</code>.  If we wanted, we could also reference it as:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> lpSize = funcParms[<span style="color:#ae81ff">3</span>];
+</code></pre></div><h2 id="draw-the-rest-of-the-owl">Draw the Rest of the Owl</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+<span style="color:#66d9ef">using</span> System.Runtime.InteropServices;
+<span style="color:#66d9ef">using</span> System.Diagnostics;
+
+<span style="color:#66d9ef">using</span> DInvoke.DynamicInvoke;
+
+<span style="color:#66d9ef">namespace</span> ConsoleApp1
+{
+    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
+    {
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+        {
+            <span style="color:#66d9ef">var</span> si = <span style="color:#66d9ef">new</span> Win32.STARTUPINFOEX();
+            si.StartupInfo.cb = (<span style="color:#66d9ef">uint</span>)Marshal.SizeOf(si);
+            si.StartupInfo.dwFlags = <span style="color:#ae81ff">0</span>x00000001;
+
+            <span style="color:#66d9ef">var</span> lpValue = Marshal.AllocHGlobal(IntPtr.Size);
+
+            <span style="color:#66d9ef">try</span>
+            {
+                <span style="color:#66d9ef">var</span> funcParams = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[] {
+                    IntPtr.Zero,
+                    <span style="color:#ae81ff">2</span>,
+                    <span style="color:#ae81ff">0</span>,
+                    IntPtr.Zero
+                };
+
+                Generic.DynamicAPIInvoke(
+                    <span style="color:#e6db74">&#34;kernel32.dll&#34;</span>,
+                    <span style="color:#e6db74">&#34;InitializeProcThreadAttributeList&#34;</span>,
+                    <span style="color:#66d9ef">typeof</span>(InitializeProcThreadAttributeList),
+                    <span style="color:#66d9ef">ref</span> funcParams,
+                    <span style="color:#66d9ef">true</span>);
+
+                <span style="color:#66d9ef">var</span> lpSize = (IntPtr)funcParams[<span style="color:#ae81ff">3</span>];
+                si.lpAttributeList = Marshal.AllocHGlobal(lpSize);
+
+                funcParams[<span style="color:#ae81ff">0</span>] = si.lpAttributeList;
+
+                Generic.DynamicAPIInvoke(
+                    <span style="color:#e6db74">&#34;kernel32.dll&#34;</span>,
+                    <span style="color:#e6db74">&#34;InitializeProcThreadAttributeList&#34;</span>,
+                    <span style="color:#66d9ef">typeof</span>(InitializeProcThreadAttributeList),
+                    <span style="color:#66d9ef">ref</span> funcParams,
+                    <span style="color:#66d9ef">true</span>);
+
+                <span style="color:#75715e">// BlockDLLs
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">if</span> (Is64Bit)
+                {
+                    Marshal.WriteIntPtr(lpValue, <span style="color:#66d9ef">new</span> IntPtr((<span style="color:#66d9ef">long</span>)Win32.BinarySignaturePolicy.BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON));
+                }
+                <span style="color:#66d9ef">else</span>
+                {
+                    Marshal.WriteIntPtr(lpValue, <span style="color:#66d9ef">new</span> IntPtr(<span style="color:#66d9ef">unchecked</span>((<span style="color:#66d9ef">uint</span>)Win32.BinarySignaturePolicy.BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON)));
+                }
+
+                funcParams = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[]
+                {
+                    si.lpAttributeList,
+                    (<span style="color:#66d9ef">uint</span>)<span style="color:#ae81ff">0</span>,
+                    (IntPtr)Win32.ProcThreadAttribute.MITIGATION_POLICY,
+                    lpValue,
+                    (IntPtr)IntPtr.Size,
+                    IntPtr.Zero,
+                    IntPtr.Zero
+                };
+
+                Generic.DynamicAPIInvoke(
+                    <span style="color:#e6db74">&#34;kernel32.dll&#34;</span>,
+                    <span style="color:#e6db74">&#34;UpdateProcThreadAttribute&#34;</span>,
+                    <span style="color:#66d9ef">typeof</span>(UpdateProcThreadAttribute),
+                    <span style="color:#66d9ef">ref</span> funcParams,
+                    <span style="color:#66d9ef">true</span>);
+
+                <span style="color:#75715e">// PPID Spoof
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">var</span> hParent = Process.GetProcessesByName(<span style="color:#e6db74">&#34;explorer&#34;</span>)[<span style="color:#ae81ff">0</span>].Handle;
+                lpValue = Marshal.AllocHGlobal(IntPtr.Size);
+                Marshal.WriteIntPtr(lpValue, hParent);
+
+                <span style="color:#75715e">// Start Process
+</span><span style="color:#75715e"></span>                funcParams = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[]
+                {
+                    si.lpAttributeList,
+                    (<span style="color:#66d9ef">uint</span>)<span style="color:#ae81ff">0</span>,
+                    (IntPtr)Win32.ProcThreadAttribute.PARENT_PROCESS,
+                    lpValue,
+                    (IntPtr)IntPtr.Size,
+                    IntPtr.Zero,
+                    IntPtr.Zero
+                };
+
+                Generic.DynamicAPIInvoke(
+                    <span style="color:#e6db74">&#34;kernel32.dll&#34;</span>,
+                    <span style="color:#e6db74">&#34;UpdateProcThreadAttribute&#34;</span>,
+                    <span style="color:#66d9ef">typeof</span>(UpdateProcThreadAttribute),
+                    <span style="color:#66d9ef">ref</span> funcParams,
+                    <span style="color:#66d9ef">true</span>);
+
+                <span style="color:#66d9ef">var</span> pa = <span style="color:#66d9ef">new</span> Win32.SECURITY_ATTRIBUTES();
+                <span style="color:#66d9ef">var</span> ta = <span style="color:#66d9ef">new</span> Win32.SECURITY_ATTRIBUTES();
+                pa.nLength = Marshal.SizeOf(pa);
+                ta.nLength = Marshal.SizeOf(ta);
+
+                funcParams = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[]
+                {
+                    <span style="color:#66d9ef">null</span>,
+                    <span style="color:#e6db74">&#34;notepad&#34;</span>,
+                    pa,
+                    ta,
+                    <span style="color:#66d9ef">false</span>,
+                    Win32.CreationFlags.EXTENDED_STARTUPINFO_PRESENT,
+                    IntPtr.Zero,
+                    <span style="color:#e6db74">&#34;C:\\Windows\\System32&#34;</span>,
+                    si,
+                    <span style="color:#66d9ef">null</span>
+                };
+
+                Generic.DynamicAPIInvoke(
+                    <span style="color:#e6db74">&#34;kernel32.dll&#34;</span>,
+                    <span style="color:#e6db74">&#34;CreateProcessA&#34;</span>,
+                    <span style="color:#66d9ef">typeof</span>(CreateProcess),
+                    <span style="color:#66d9ef">ref</span> funcParams,
+                    <span style="color:#66d9ef">true</span>);
+
+                <span style="color:#66d9ef">var</span> pi = (Win32.PROCESS_INFORMATION)funcParams[<span style="color:#ae81ff">9</span>];
+
+                <span style="color:#66d9ef">if</span> (pi.hProcess != IntPtr.Zero)
+                {
+                    Console.WriteLine(<span style="color:#e6db74">$&#34;Process ID: {pi.dwProcessId}&#34;</span>);
+                }
+
+            }
+            <span style="color:#66d9ef">catch</span> (Exception e)
+            {
+                Console.Error.WriteLine(e.Message);
+            }
+            <span style="color:#66d9ef">finally</span>
+            {
+                <span style="color:#75715e">// Clean up
+</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">var</span> funcParams = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[]
+                {
+                    si.lpAttributeList
+                };
+
+                Generic.DynamicAPIInvoke(
+                    <span style="color:#e6db74">&#34;kernel32.dll&#34;</span>,
+                    <span style="color:#e6db74">&#34;DeleteProcThreadAttributeList&#34;</span>,
+                    <span style="color:#66d9ef">typeof</span>(DeleteProcThreadAttributeList),
+                    <span style="color:#66d9ef">ref</span> funcParams,
+                    <span style="color:#66d9ef">true</span>);
+                
+                Marshal.FreeHGlobal(si.lpAttributeList);
+                Marshal.FreeHGlobal(lpValue);
+            }
+
+        }
+
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">bool</span> Is64Bit
+        {
+            <span style="color:#66d9ef">get</span>
+            {
+                <span style="color:#66d9ef">return</span> IntPtr.Size == <span style="color:#ae81ff">8</span>;
+            }
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+        <span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">bool</span> InitializeProcThreadAttributeList(
+            IntPtr lpAttributeList,
+            <span style="color:#66d9ef">int</span> dwAttributeCount,
+            <span style="color:#66d9ef">int</span> dwFlags,
+            <span style="color:#66d9ef">ref</span> IntPtr lpSize);
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+        <span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">bool</span> UpdateProcThreadAttribute(
+            IntPtr lpAttributeList,
+            <span style="color:#66d9ef">uint</span> dwFlags,
+            IntPtr Attribute,
+            IntPtr lpValue,
+            IntPtr cbSize,
+            IntPtr lpPreviousValue,
+            IntPtr lpReturnSize);
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+        <span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">bool</span> CreateProcess(
+            <span style="color:#66d9ef">string</span> lpApplicationName,
+            <span style="color:#66d9ef">string</span> lpCommandLine,
+            <span style="color:#66d9ef">ref</span> Win32.SECURITY_ATTRIBUTES lpProcessAttributes,
+            <span style="color:#66d9ef">ref</span> Win32.SECURITY_ATTRIBUTES lpThreadAttributes,
+            <span style="color:#66d9ef">bool</span> bInheritHandles,
+            Win32.CreationFlags dwCreationFlags,
+            IntPtr lpEnvironment,
+            <span style="color:#66d9ef">string</span> lpCurrentDirectory,
+            <span style="color:#66d9ef">ref</span> Win32.STARTUPINFOEX lpStartupInfo,
+            <span style="color:#66d9ef">out</span> Win32.PROCESS_INFORMATION lpProcessInformation);
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+        <span style="color:#66d9ef">delegate</span> <span style="color:#66d9ef">bool</span> DeleteProcThreadAttributeList(
+            IntPtr lpAttributeList);
+    }
+
+    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Win32</span>
+    {
+<span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential)]</span>
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">PROCESS_INFORMATION</span>
+        {
+            <span style="color:#66d9ef">public</span> IntPtr hProcess;
+            <span style="color:#66d9ef">public</span> IntPtr hThread;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> dwProcessId;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> dwThreadId;
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential)]</span>
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">STARTUPINFO</span>
+        {
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> cb;
+            <span style="color:#66d9ef">public</span> IntPtr lpReserved;
+            <span style="color:#66d9ef">public</span> IntPtr lpDesktop;
+            <span style="color:#66d9ef">public</span> IntPtr lpTitle;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwX;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwY;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwXSize;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwYSize;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwXCountChars;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwYCountChars;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwFillAttributes;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> dwFlags;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">ushort</span> wShowWindow;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">ushort</span> cbReserved;
+            <span style="color:#66d9ef">public</span> IntPtr lpReserved2;
+            <span style="color:#66d9ef">public</span> IntPtr hStdInput;
+            <span style="color:#66d9ef">public</span> IntPtr hStdOutput;
+            <span style="color:#66d9ef">public</span> IntPtr hStdErr;
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential)]</span>
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">STARTUPINFOEX</span>
+        {
+            <span style="color:#66d9ef">public</span> STARTUPINFO StartupInfo;
+            <span style="color:#66d9ef">public</span> IntPtr lpAttributeList;
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential)]</span>
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">SECURITY_ATTRIBUTES</span>
+        {
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> nLength;
+            <span style="color:#66d9ef">public</span> IntPtr lpSecurityDescriptor;
+            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> bInheritHandle;
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [Flags]</span>
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">enum</span> ProcThreadAttribute : <span style="color:#66d9ef">int</span>
+        {
+            MITIGATION_POLICY = <span style="color:#ae81ff">0</span>x20007,
+            PARENT_PROCESS = <span style="color:#ae81ff">0</span>x00020000
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [Flags]</span>
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">enum</span> BinarySignaturePolicy : <span style="color:#66d9ef">ulong</span>
+        {
+            BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON = <span style="color:#ae81ff">0</span>x100000000000,
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [Flags]</span>
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">enum</span> CreationFlags : <span style="color:#66d9ef">uint</span>
+        {
+            EXTENDED_STARTUPINFO_PRESENT = <span style="color:#ae81ff">0</span>x00080000
+        }
+    }
+}
+</code></pre></div><p><img src="/images/dinvoke-ppid-blockdlls/notepad.png" alt="" title="Notepad"></p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
