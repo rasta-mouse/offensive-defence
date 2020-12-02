@@ -5,10 +5,19 @@
     <link>https://offensivedefence.co.uk/authors/</link>
     <description>Recent content in Authors on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Fri, 20 Nov 2020 16:22:10 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 02 Dec 2020 10:52:26 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/authors/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Rasta Mouse</title>
+      <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
+      <pubDate>Wed, 02 Dec 2020 10:52:26 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/authors/rastamouse/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Ceri Coburn</title>
@@ -16,15 +25,6 @@
       <pubDate>Fri, 20 Nov 2020 16:22:10 +0000</pubDate>
       
       <guid>https://offensivedefence.co.uk/authors/ccob/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>Rasta Mouse</title>
-      <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
-      <pubDate>Fri, 20 Nov 2020 16:22:10 +0000</pubDate>
-      
-      <guid>https://offensivedefence.co.uk/authors/rastamouse/</guid>
       <description></description>
     </item>
     
