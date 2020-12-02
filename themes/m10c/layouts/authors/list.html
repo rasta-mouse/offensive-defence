@@ -1,0 +1,19 @@
+{{ define "main" }}
+  <h2>{{ .Params.name }}</h2>
+  <img class="app-header-avatar" src="{{ .Params.avatar | default "avatar.jpg" | relURL }}" alt="{{ .Site.Params.author | default "John Doe" }}" />
+    
+  <h2>Socials</h2>
+
+  {{ .Content }}
+
+  <h2>Articles</h2>
+
+  <ul>
+    {{ range .Data.Pages }}
+    <li><a href="{{ .Permalink }}">{{ .Title }}</a></li>
+    {{ end }}
+  </ul>
+  
+  {{ partial "pagination.html" $ }}
+
+{{ end }}
