@@ -2,6 +2,8 @@
 title: "D/Invokify PPID Spoofy & BlockDLLs"
 date: 2020-12-02T10:52:26Z
 draft: false
+authors:
+    - rastamouse
 ---
 
 ## Intro
