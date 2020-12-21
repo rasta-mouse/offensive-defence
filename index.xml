@@ -5,10 +5,20 @@
     <link>https://offensivedefence.co.uk/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 02 Dec 2020 10:52:26 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 21 Dec 2020 12:06:54 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>AppDomain.AssemblyResolve</title>
+      <link>https://offensivedefence.co.uk/posts/assembly-resolve/</link>
+      <pubDate>Mon, 21 Dec 2020 12:06:54 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/assembly-resolve/</guid>
+      <description>Intro Jean Maes posted a blog entitled &amp;ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&amp;rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.
+For a decent background, I encourage readers to review Jean&amp;rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it.</description>
+    </item>
     
     <item>
       <title>D/Invokify PPID Spoofy &amp; BlockDLLs</title>
