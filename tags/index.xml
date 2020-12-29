@@ -5,7 +5,7 @@
     <link>https://offensivedefence.co.uk/tags/</link>
     <description>Recent content in Tags on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 09 Jun 2020 13:12:56 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 29 Dec 2020 10:38:26 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/tags/index.xml" rel="self" type="application/rss+xml" />
     
@@ -13,7 +13,7 @@
     <item>
       <title>.net</title>
       <link>https://offensivedefence.co.uk/tags/.net/</link>
-      <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
+      <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
       
       <guid>https://offensivedefence.co.uk/tags/.net/</guid>
       <description></description>
@@ -22,9 +22,36 @@
     <item>
       <title>c#</title>
       <link>https://offensivedefence.co.uk/tags/c#/</link>
-      <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
+      <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
       
       <guid>https://offensivedefence.co.uk/tags/c#/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>dnlib</title>
+      <link>https://offensivedefence.co.uk/tags/dnlib/</link>
+      <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/tags/dnlib/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>dinvoke</title>
+      <link>https://offensivedefence.co.uk/tags/dinvoke/</link>
+      <pubDate>Wed, 02 Dec 2020 10:52:26 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/tags/dinvoke/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>covenant</title>
+      <link>https://offensivedefence.co.uk/tags/covenant/</link>
+      <pubDate>Sat, 07 Nov 2020 11:54:14 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/tags/covenant/</guid>
       <description></description>
     </item>
     

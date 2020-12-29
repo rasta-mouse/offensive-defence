@@ -5,10 +5,21 @@
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Mon, 21 Dec 2020 12:06:54 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 29 Dec 2020 10:38:26 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Adding DLL Exports with dnlib</title>
+      <link>https://offensivedefence.co.uk/posts/dnlib-dllexport/</link>
+      <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/dnlib-dllexport/</guid>
+      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.
+I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.
+Starting from a .</description>
+    </item>
     
     <item>
       <title>AppDomain.AssemblyResolve</title>

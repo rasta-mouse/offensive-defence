@@ -5,10 +5,61 @@
     <link>https://offensivedefence.co.uk/tags/c#/</link>
     <description>Recent content in c# on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 09 Jun 2020 13:12:56 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 29 Dec 2020 10:38:26 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/tags/c#/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Adding DLL Exports with dnlib</title>
+      <link>https://offensivedefence.co.uk/posts/dnlib-dllexport/</link>
+      <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/dnlib-dllexport/</guid>
+      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.
+I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.
+Starting from a .</description>
+    </item>
+    
+    <item>
+      <title>AppDomain.AssemblyResolve</title>
+      <link>https://offensivedefence.co.uk/posts/assembly-resolve/</link>
+      <pubDate>Mon, 21 Dec 2020 12:06:54 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/assembly-resolve/</guid>
+      <description>Intro Jean Maes posted a blog entitled &amp;ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&amp;rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.
+For a decent background, I encourage readers to review Jean&amp;rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it.</description>
+    </item>
+    
+    <item>
+      <title>D/Invokify PPID Spoofy &amp; BlockDLLs</title>
+      <link>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</link>
+      <pubDate>Wed, 02 Dec 2020 10:52:26 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</guid>
+      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).
+This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
+    </item>
+    
+    <item>
+      <title>Module Stomping in C#</title>
+      <link>https://offensivedefence.co.uk/posts/module-stomping/</link>
+      <pubDate>Fri, 20 Nov 2020 16:22:10 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/module-stomping/</guid>
+      <description>A little while ago I published what I described as a &amp;ldquo;barely functional module stomping in C#&amp;rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.
+Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.
+What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</description>
+    </item>
+    
+    <item>
+      <title>Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV</title>
+      <link>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</link>
+      <pubDate>Sat, 07 Nov 2020 11:54:14 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</guid>
+      <description>Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution. AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools. However, it&amp;rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&amp;rsquo;t have the skills or knowledge to make the necesary modifications.</description>
+    </item>
     
     <item>
       <title>SharpSploit v1.6 Updates</title>
