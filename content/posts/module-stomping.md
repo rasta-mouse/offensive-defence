@@ -2,6 +2,10 @@
 title: "Module Stomping in C#"
 date: 2020-11-20T16:22:10Z
 draft: false
+tags:
+    - "c#"
+    - ".net"
+    - "dinvoke"
 authors:
     - rastamouse
     - ccob

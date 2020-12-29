@@ -2,6 +2,9 @@
 title: "AppDomain.AssemblyResolve"
 date: 2020-12-21T12:06:54Z
 draft: false
+tags:
+    - "c#"
+    - ".net"
 authors:
     - RastaMouse
 ---

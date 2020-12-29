@@ -1,6 +1,10 @@
 ---
 title: "Using Custom Covenant Listener Profiles & Grunt Templates to Elude AV"
 date: 2020-11-07T11:54:14Z
+tags:
+    - "c#"
+    - ".net"
+    - "covenant"
 authors:
     - rastamouse
 draft: false
