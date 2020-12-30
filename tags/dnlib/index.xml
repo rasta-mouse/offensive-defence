@@ -5,10 +5,20 @@
     <link>https://offensivedefence.co.uk/tags/dnlib/</link>
     <description>Recent content in dnlib on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 29 Dec 2020 10:38:26 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 30 Dec 2020 20:25:03 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/tags/dnlib/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>DLL&#39;s to EXE&#39;s with dnlib</title>
+      <link>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</link>
+      <pubDate>Wed, 30 Dec 2020 20:25:03 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</guid>
+      <description>Intro Continuing with my dnlib kick, this post will demonstrate how to &amp;ldquo;convert&amp;rdquo; a .NET DLL to an EXE. We&amp;rsquo;ll use the same DLL code as in the previous post.
+using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&amp;#34;Hello from DemoDLL&amp;#34;); } } } If you&amp;rsquo;ve dabbled in C# enough, you&amp;rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.</description>
+    </item>
     
     <item>
       <title>Adding DLL Exports with dnlib</title>

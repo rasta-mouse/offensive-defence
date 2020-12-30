@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>DLL&#39;s to EXE&#39;s with dnlib - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.74.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="DLL&#39;s to EXE&#39;s with dnlib"/>
+<meta name="twitter:description" content="Intro Continuing with my dnlib kick, this post will demonstrate how to &ldquo;convert&rdquo; a .NET DLL to an EXE. We&rsquo;ll use the same DLL code as in the previous post.
+using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&#34;Hello from DemoDLL&#34;); } } } If you&rsquo;ve dabbled in C# enough, you&rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library."/>
+
+    <meta property="og:title" content="DLL&#39;s to EXE&#39;s with dnlib" />
+<meta property="og:description" content="Intro Continuing with my dnlib kick, this post will demonstrate how to &ldquo;convert&rdquo; a .NET DLL to an EXE. We&rsquo;ll use the same DLL code as in the previous post.
+using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&#34;Hello from DemoDLL&#34;); } } } If you&rsquo;ve dabbled in C# enough, you&rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/" />
+<meta property="article:published_time" content="2020-12-30T20:25:03+00:00" />
+<meta property="article:modified_time" content="2020-12-30T20:25:03+00:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">DLL&#39;s to EXE&#39;s with dnlib</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Dec 30, 2020
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          3 min read
+        </div><div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tag">
+  <title>tag</title>
+  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line>
+</svg>
+          <a class="tag" href="https://offensivedefence.co.uk/tags/c#/">c#</a><a class="tag" href="https://offensivedefence.co.uk/tags/.net/">.net</a><a class="tag" href="https://offensivedefence.co.uk/tags/dnlib/">dnlib</a></div></div>
+    </header>
+    <div class="post-content">
+      <h3 id="intro">Intro</h3>
+<p>Continuing with my dnlib kick, this post will demonstrate how to &ldquo;convert&rdquo; a .NET DLL to an EXE.  We&rsquo;ll use the same DLL code as in the <a href="../dnlib-dllexport">previous</a> post.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System.Windows.Forms;
+
+<span style="color:#66d9ef">namespace</span> DemoDLL
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Demo</span>
+    {
+        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Execute()
+        {
+            MessageBox.Show(<span style="color:#e6db74">&#34;Hello from DemoDLL&#34;</span>);
+        }
+    }
+}
+</code></pre></div><p>If you&rsquo;ve dabbled in C# enough, you&rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.  DLLs don&rsquo;t require anything special and the only real &ldquo;requirement&rdquo; of a console app is for it to have an Entry Point, e.g.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+{
+    <span style="color:#75715e">// do stuff
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>To convert a DLL to an EXE, all we really have to do is provide an entry point and change the &ldquo;module type&rdquo; of the assembly.  We&rsquo;ll make our entry point run the existing <code>Execute</code> method.</p>
+<h3 id="creating-main">Creating Main</h3>
+<p>To create the new <code>Main</code> method, we use the <code>MethodDefUser</code> method in dnlib, which allows us to craft arbitrary methods.  This method takes a name, a signature and a set of optional flags.  The signature defines both the return and input types for the method.  <code>Main</code> will return <code>void</code> and take in a <code>string[]</code> called <code>args</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> main = <span style="color:#66d9ef">new</span> MethodDefUser(<span style="color:#e6db74">&#34;Main&#34;</span>, MethodSig.CreateStatic(module.CorLibTypes.Void, <span style="color:#66d9ef">new</span> SZArraySig(module.CorLibTypes.String)))
+{
+    Attributes = MethodAttributes.Static,
+    ImplAttributes = MethodImplAttributes.IL | MethodImplAttributes.Managed
+};
+</code></pre></div><p>Add the parameter(s) with <code>ParamDefUser</code> which can take a name and position.  We use position <code>1</code> because <code>0</code> is reserved for the method&rsquo;s return type.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">main.ParamDefs.Add(<span style="color:#66d9ef">new</span> ParamDefUser(<span style="color:#e6db74">&#34;args&#34;</span>, <span style="color:#ae81ff">1</span>));
+</code></pre></div><p>Those steps have only defined the signature - now we need to give it a body (the &ldquo;stuff&rdquo; to execute).  Create a new (empty) <code>CilBody</code> and assign it to <code>main</code>'s <code>Body</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> mainBody = <span style="color:#66d9ef">new</span> CilBody();
+main.Body = mainBody;
+</code></pre></div><p>Now we can add instructions to the body - since we want to execute an existing method, we need a reference to it.  As stated in the previous post, I just use Linq.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> exec = type.Methods.FirstOrDefault(m =&gt; m.Name == <span style="color:#e6db74">&#34;Execute&#34;</span>);
+</code></pre></div><p>Then we can add a <code>call</code> <code>opcode</code> to the body, passing in the reference to the target method (followed by a <code>ret</code>).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">mainBody.Instructions.Add(OpCodes.Call.ToInstruction(exec));
+mainBody.Instructions.Add(OpCodes.Ret.ToInstruction());
+</code></pre></div><p>The last two steps are to add this new <code>Main</code> method to the <code>Demo</code> type (class) and then specify it as the module&rsquo;s <code>EntryPoint</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">type.Methods.Add(main);
+module.EntryPoint = main;
+</code></pre></div><h3 id="modulekind">ModuleKind</h3>
+<p>Now we&rsquo;re ready to write the assembly to a new file.  First define a new <code>ModuleWriterOptions</code> instance.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> opts = <span style="color:#66d9ef">new</span> ModuleWriterOptions(module);
+</code></pre></div><p><code>opts.ModuleKind</code> is currently set to <code>Dll</code> and <code>opts.PEHeadersOptions.Characteristics</code> has the flags <code>ExecutableImage | LargeAddressAware | Dll</code>.</p>
+<p>Change <code>ModuleKind</code> to <code>Console</code> and strip the <code>Dll</code> flag from the <code>PEHeaderOptions</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">opts.ModuleKind = ModuleKind.Console;
+opts.PEHeadersOptions.Characteristics = dnlib.PE.Characteristics.ExecutableImage | dnlib.PE.Characteristics.LargeAddressAware;
+</code></pre></div><p>Finally, write the assembly to a new EXE.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">module.Write(<span style="color:#e6db74">@&#34;C:\Temp\DemoEXE.exe&#34;</span>, opts);
+</code></pre></div><h3 id="dnspy">dnSpy</h3>
+<p>This is how the assembly looks in dnSpy.  We didn&rsquo;t mess with changing the namespace or anything, so there are still references to the original <code>DemoDLL</code> name.</p>
+<p><img src="/images/dnlib-dll-to-exe/dnspy.png" alt="" title="dnSpy"></p>
+<p>And executing the assembly works as expected.</p>
+<p><img src="/images/dnlib-dll-to-exe/exec.png" alt="" title="DemoEXE"></p>
+<h3 id="final-code">Final Code</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> dnlib.DotNet;
+<span style="color:#66d9ef">using</span> dnlib.DotNet.Emit;
+<span style="color:#66d9ef">using</span> dnlib.DotNet.Writer;
+
+<span style="color:#66d9ef">using</span> System.Linq;
+
+<span style="color:#66d9ef">namespace</span> ConsoleApp
+{
+    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
+    {
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+        {
+            <span style="color:#66d9ef">var</span> module = ModuleDefMD.Load(<span style="color:#e6db74">@&#34;C:\Temp\DemoDLL.dll&#34;</span>);
+            <span style="color:#66d9ef">var</span> type = module.GetTypes().FirstOrDefault(t =&gt; t.Name == <span style="color:#e6db74">&#34;Demo&#34;</span>);
+
+            <span style="color:#75715e">// Create the Main signature
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">var</span> main = <span style="color:#66d9ef">new</span> MethodDefUser(<span style="color:#e6db74">&#34;Main&#34;</span>, MethodSig.CreateStatic(module.CorLibTypes.Void, <span style="color:#66d9ef">new</span> SZArraySig(module.CorLibTypes.String)))
+            {
+                Attributes = MethodAttributes.Static,
+                ImplAttributes = MethodImplAttributes.IL | MethodImplAttributes.Managed
+            };
+
+            <span style="color:#75715e">// Add Main param
+</span><span style="color:#75715e"></span>            main.ParamDefs.Add(<span style="color:#66d9ef">new</span> ParamDefUser(<span style="color:#e6db74">&#34;args&#34;</span>, <span style="color:#ae81ff">1</span>));
+
+            <span style="color:#75715e">// Create Main body
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">var</span> mainBody = <span style="color:#66d9ef">new</span> CilBody();
+            main.Body = mainBody;
+
+            <span style="color:#75715e">// Instance of Execute method
+</span><span style="color:#75715e"></span>            <span style="color:#66d9ef">var</span> exec = type.Methods.FirstOrDefault(m =&gt; m.Name == <span style="color:#e6db74">&#34;Execute&#34;</span>);
+
+            <span style="color:#75715e">// Add Call and Ret instructions to Main body
+</span><span style="color:#75715e"></span>            mainBody.Instructions.Add(OpCodes.Call.ToInstruction(exec));
+            mainBody.Instructions.Add(OpCodes.Ret.ToInstruction());
+
+            <span style="color:#75715e">// Add Main method and set EntryPoint
+</span><span style="color:#75715e"></span>            type.Methods.Add(main);
+            module.EntryPoint = main;
+
+            <span style="color:#66d9ef">var</span> opts = <span style="color:#66d9ef">new</span> ModuleWriterOptions(module);
+            opts.ModuleKind = ModuleKind.Console;
+            opts.PEHeadersOptions.Characteristics = dnlib.PE.Characteristics.ExecutableImage | dnlib.PE.Characteristics.LargeAddressAware;
+
+            module.Write(<span style="color:#e6db74">@&#34;C:\Temp\DemoEXE.exe&#34;</span>, opts);
+        }
+    }
+}
+</code></pre></div>
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
