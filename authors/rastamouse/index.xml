@@ -5,10 +5,21 @@
     <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
     <description>Recent content in Rasta Mouse on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 30 Dec 2020 20:25:03 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 31 Dec 2020 12:00:45 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Embedding Resources with dnlib</title>
+      <link>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</link>
+      <pubDate>Thu, 31 Dec 2020 12:00:45 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</guid>
+      <description>Intro In this post, I&amp;rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.
+Injector Template I&amp;rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&amp;rsquo;s embedded within it and then inject it into a target process.
+using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&amp;#34;Shellcode&amp;#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly.</description>
+    </item>
     
     <item>
       <title>DLL&#39;s to EXE&#39;s with dnlib</title>
