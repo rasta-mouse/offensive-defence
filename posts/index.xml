@@ -5,10 +5,21 @@
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Thu, 31 Dec 2020 12:00:45 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 24 Jan 2021 15:19:05 +0000</lastBuildDate>
     
 	<atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Syscalls with D/Invoke</title>
+      <link>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</link>
+      <pubDate>Sun, 24 Jan 2021 15:19:05 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</guid>
+      <description>Windows Architecture Primer x86 processors have 4 privilege levels, known as rings, that control access to memory and CPU operations. They range from Ring 0, the most privileged, to Ring 3.
+Image credit: Wikipedia
+Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example.</description>
+    </item>
     
     <item>
       <title>Embedding Resources with dnlib</title>
