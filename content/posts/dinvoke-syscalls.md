@@ -2,6 +2,14 @@
 title: "Syscalls with D/Invoke"
 date: 2021-01-24T15:19:05Z
 draft: false
+tags:
+    - "c#"
+    - ".net"
+    - "dinvoke"
+    - "syscalls"
+    - "edr"
+authors:
+    - rastamouse
 ---
 
 ### Windows Architecture Primer
