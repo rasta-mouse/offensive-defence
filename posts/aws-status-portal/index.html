@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>AWS Status Portal - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.74.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="AWS Status Portal"/>
+<meta name="twitter:description" content="Intro I recently took an interest in the AWS Visual Studio extension and the AWS .NET Core SDK, and came up with this mini-project to showcase some of the neat things you can do with them. This post will show you how to build a (very basic) EC2 status monitoring portal in Blazor.
+We&rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later)."/>
+
+    <meta property="og:title" content="AWS Status Portal" />
+<meta property="og:description" content="Intro I recently took an interest in the AWS Visual Studio extension and the AWS .NET Core SDK, and came up with this mini-project to showcase some of the neat things you can do with them. This post will show you how to build a (very basic) EC2 status monitoring portal in Blazor.
+We&rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later)." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/aws-status-portal/" />
+<meta property="article:published_time" content="2021-02-14T09:46:31+00:00" />
+<meta property="article:modified_time" content="2021-02-14T09:46:31+00:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">AWS Status Portal</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Feb 14, 2021
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          8 min read
+        </div><div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tag">
+  <title>tag</title>
+  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line>
+</svg>
+          <a class="tag" href="https://offensivedefence.co.uk/tags/aws/">aws</a><a class="tag" href="https://offensivedefence.co.uk/tags/sdk/">sdk</a><a class="tag" href="https://offensivedefence.co.uk/tags/ec2/">ec2</a><a class="tag" href="https://offensivedefence.co.uk/tags/cloudwatch/">cloudwatch</a><a class="tag" href="https://offensivedefence.co.uk/tags/lambda/">lambda</a><a class="tag" href="https://offensivedefence.co.uk/tags/c#/">c#</a><a class="tag" href="https://offensivedefence.co.uk/tags/.net/">.net</a></div></div>
+    </header>
+    <div class="post-content">
+      <h3 id="intro">Intro</h3>
+<p>I recently took an <a href="https://twitter.com/_RastaMouse/status/1355948335761395712">interest</a> in the AWS Visual Studio extension and the AWS .NET Core SDK, and came up with this mini-project to showcase some of the neat things you can do with them.  This post will show you how to build a (very basic) EC2 status monitoring portal in Blazor.</p>
+<p>We&rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later).</p>
+<h3 id="install-the-aws-toolkit">Install the AWS Toolkit</h3>
+<p>Download and intall the AWS Toolkit from the <a href="https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.AWSToolkitforVisualStudio2017">Visual Studio Marketplace</a>.  When you launch Visual Studio, follow the setup wizard to create a profile with your AWS Access and Secret Keys.  Obviously I yolo&rsquo;d and used my root account, but you should ideally create a dedicated IAM user that has the level of permissions that you desire / are comfortable with.</p>
+<p>The AWS Explorer can then be opened any time from the <strong>View</strong> menu in VS.</p>
+<p><img src="/images/aws-status-portal/aws-explorer.png" alt="" title="AWS Explorer"></p>
+<h3 id="create-the-blazor-server-app">Create the Blazor Server App</h3>
+<p>Open VS and create a new <strong>Blazor Server App</strong> (both .NET 5.0 and .NET Core 3.1 are valid options).  Because this is just a demo, set authentication to <strong>None</strong> and uncheck HTTPS.  I also went ahead and removed the template components such as the Counter and WeatherForecast page.  We&rsquo;ll keep our code on the main <strong>Index.razor</strong> page.</p>
+<p>My app now looks like this:</p>
+<p><img src="/images/aws-status-portal/blank-layout.png" alt="" title="Blazor blank layout"></p>
+<h3 id="aws-class-library">AWS Class Library</h3>
+<p>Now we need to fetch some EC2 information from AWS to display on the page.</p>
+<p>It&rsquo;s <a href="https://pusher.com/tutorials/clean-architecture-introduction">good practice</a> to keep this functionality decoupled from the Blazor app itself, so we&rsquo;ll create a .NET Standard 2.1 Library and <a href="https://www.freecodecamp.org/news/a-quick-intro-to-dependency-injection-what-it-is-and-when-to-use-it-7578c84fa88f/">dependancy inject</a> it wherever required. (I&rsquo;m not going to create different Use Cases as per the Clean Architecture as that&rsquo;s a little OTT for this demo).</p>
+<p>The first thing to do is install the <strong>AWSSDK.EC2</strong> NuGet package.  Then create a new interface, <strong>IEC2Instance.cs</strong> and declare the following methods:</p>
+<p><img src="/images/aws-status-portal/iec2instance.png" alt="" title="EC2Instance Interface"></p>
+<p>The <strong>Instance</strong> class is in the <strong>Amazon.EC2.Model</strong> namespacem which comes from the SDK.</p>
+<p>When we come to implement that interface, we need a constructor that will create a new <strong>AmazonEC2Client</strong>.  It requires your access and secret keys as well as a target region (mine is hardcoded to eu-west-2 (London)).</p>
+<p><img src="/images/aws-status-portal/ec2instance.png" alt="" title="EC2Instance"></p>
+<p><strong>Startup.cs</strong> in Blazor is where we add services we want to be made available to the application.  In <strong>ConfigureServices</strong> we can add the following:</p>
+<p><img src="/images/aws-status-portal/iec2instance_di.png" alt="" title="IEC2Instance DI"></p>
+<p>The keys can then be added to to your <strong>appsettings.json</strong>:</p>
+<p><img src="/images/aws-status-portal/appsettings.png" alt="" title="AppSettings"></p>
+<p>The typical pattern for using this SDK is to create a &ldquo;request&rdquo; which you pass to the AmazonEC2Client.  So to get a list of all instances, create a <strong>DescribeInstancesRequest</strong> and pass it to the <strong>DescribeInstancesAsync</strong> method on the client.  The response contains an array of <strong>Reservations</strong>, each of which contain an array of <strong>Instances</strong>.  We just iterate over them, adding to a new list which is then returned.</p>
+<p><img src="/images/aws-status-portal/getinstances.png" alt="" title="GetInstances"></p>
+<blockquote>
+<p><strong>Note:</strong>  I have a lot of EC2 instances on my account, so I&rsquo;ve included a filter in the request to only return instances that have a specific tag.</p>
+</blockquote>
+<p>Getting a single instance is practically the same - <strong>DescribeInstanceRequest</strong> takes am optional list of instance-id&rsquo;s, and providing a single id should return a single result (no null checking here though, naughty naughty).</p>
+<p><img src="/images/aws-status-portal/getinstance.png" alt="" title="GetInstance"></p>
+<p>Starting and stopping instances requires <strong>StartInstancesRequest</strong> and <strong>StopInstancesRequest</strong> respectively.  These methods only return a response code with a bit of metadata, so we can return a bool based on whether a successful response code was returned or not.  Although it&rsquo;s worth noting that if an instance is already in a stopped state and we submit a stop request, the return code is still OK.  The status code only really pertains to invalid/malformed requests.</p>
+<p>Checking the current status of an instance before submitted a request should be carried out in a business logic layer, but we&rsquo;re not going to worry about for this demo.</p>
+<p><img src="/images/aws-status-portal/start-stop-instance.png" alt="" title="Start/Stop Instance"></p>
+<h3 id="rendering-on-the-page">Rendering on the page</h3>
+<p>Now that we have this library sorted, it&rsquo;s time to execute it from our Blazor page and display the output.</p>
+<p>At the top of the index page we can inject our <strong>IEC2Instance</strong> interface as a dependancy, and then use some questionable Bootstrap layout to display the instance data.</p>
+<p><img src="/images/aws-status-portal/bootstrap.png" alt="" title="Bootstrap"></p>
+<p><img src="/images/aws-status-portal/lifecycle-override.png" alt="" title="Override OnInitializedAsync"></p>
+<p>We can override various points in a Blazor page&rsquo;s lifecycle, which enables us to fetch the EC2 data when the page loads.  Here, I&rsquo;ve overridden <strong>OnInitializedAsync</strong>.</p>
+<p>Running the application, I now see this:</p>
+<p><img src="/images/aws-status-portal/all-stopped.png" alt="" title="All Stopped"></p>
+<p>Pretty cool so far.  Now let&rsquo;s wire up those buttons.</p>
+<p>Add two methods below that will simply call the methods on IEC2Instance.</p>
+<p><img src="/images/aws-status-portal/start-stop-methods.png" alt="" title="Start/Stop"></p>
+<blockquote>
+<p>Check out Chris Sainty&rsquo;s <a href="https://github.com/Blazored">Blazored repo&rsquo;s</a> for some excellent Blazor libraries, including this <a href="https://github.com/Blazored/Modal">Model</a> one.</p>
+</blockquote>
+<p><img src="/images/aws-status-portal/buttons-onclick.png" alt="" title="onclick"></p>
+<p>Let&rsquo;s give it a try by clicking on the Start buttons&hellip; Once they&rsquo;re clicked, it will appear as though nothing is happening - there is no feedback on the UI.  However, if we manually refresh the page, the statuses will update.</p>
+<p><img src="/images/aws-status-portal/all-running.png" alt="" title="All Running"></p>
+<p>Likewise, if we click stop refresh, we&rsquo;ll see them in a &ldquo;stopping&rdquo; state.</p>
+<p><img src="/images/aws-status-portal/all-stopping.png" alt="" title="All Stopping"></p>
+<h3 id="real-time-updates">Real-time Updates?</h3>
+<p>EC2 Instances have a <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html">lifecycle</a> that they move through when they are launched, rebooted, started, stopped and terminated.  If an instance is started from a stopped state, it will go <strong>[stopped] &gt; [pending] &gt; [running]</strong> and if stopped from a running state, it will go <strong>[running] &gt; [stopping] &gt; [stopped]</strong>.</p>
+<p>We want our UI to respond to each state change, but without running our <strong>GetInstances</strong> method in a loop (because that&rsquo;s stupid and inefficient).  Turns out, this is completely possible using <strong>CloudWatch</strong> and <strong>Lambda</strong>.</p>
+<p>CloudWatch has a large collection of events that you can trigger actions from - one such event is the <strong>EC2 Instance State-change Notification</strong>.  When this rule is triggered, we can invoke one or more actions including an SNS topic, Lambda function, SSM Automation and more.</p>
+<p>We&rsquo;ll create a webhook receiver in our Blazor application and a corresponding Lambda function that will notify our UI when an EC2 instance has changed its state.</p>
+<h3 id="webhook-receiver">Webhook Receiver</h3>
+<p>The webhook is going to be a very simple Controller with a GET method.  The expected incoming format will be <strong>http://{url}/hook/ec2?instance_id=blah</strong>.</p>
+<p>This code is just for testing - if the instance id is null, we return a 400 Bad Request, otherwise we print the id to the console and return a 200 OK.  We also need to make this endpoint available on the Internet so that AWS can reach it - the most logical solution to this is <a href="https://ngrok.com/">ngrok</a>.</p>
+<p><img src="/images/aws-status-portal/test-hook.png" alt="" title="Test Hook"></p>
+<p><img src="/images/aws-status-portal/test-hook-posh.png" alt="" title="Test Hook PowerShell"></p>
+<blockquote>
+<p><strong>Note:</strong> Make sure to add <strong>endpoints.MapControllers();</strong> to the Blazor <strong>Startup.cs</strong>.</p>
+</blockquote>
+<p>Now we just need to link this endpoint with a way of raising changes on the UI.  All we&rsquo;re going to do is trigger the UI to call <strong>GetInstance(string instance_id)</strong> and then refresh its state.  To do that, I&rsquo;m just going to subscribe to and raise an event.  This is probably not the best way, but it&rsquo;s pretty easy to do.</p>
+<p>We&rsquo;re going to create a new service called <strong>IChangeNotification</strong>:</p>
+<p><img src="/images/aws-status-portal/ichangenotification.png" alt="" title="Notification Service"></p>
+<p>The <strong>TriggerUpdate</strong> method will be called from inside our webhook receiver and will take the instance_id.  Within the implementation, we&rsquo;ll have an <strong>EventHandler</strong> which TriggerUpdate will simply invoke.</p>
+<p>Now when the razor page is initialized, it will subscribe to that event and when invoked, will call <strong>UpdateInstanceState</strong>.  We&rsquo;ll also implement <strong>IDisposable</strong> on the page to unsubscribe from the event when we navigate away.</p>
+<p><img src="/images/aws-status-portal/index-di.png" alt="" title="Index.razor Dependancy Injection">
+<img src="/images/aws-status-portal/subscribe-event.png" alt="" title="Subscribe to Event">
+<img src="/images/aws-status-portal/update-instance-state.png" alt="" title="Update Instance State">
+<img src="/images/aws-status-portal/idisposable.png" alt="" title="Dispose"></p>
+<h3 id="building-the-lambda-function">Building the Lambda Function</h3>
+<p>Now we need to write the actual Lambda function that we&rsquo;ll invoke from CloudWatch.  This function just needs to take in the id of the instance who&rsquo;s state has changed and call our webhook.</p>
+<p>If you&rsquo;re familiar with Lambda, you&rsquo;ll know there are a multitude of runtimes that can be used, from Node.js to Python.  But we &lt;3 .NET, so we&rsquo;ll use the .NET Core 3.1 runtime.  There are actually loads of .NET templates that we can download via NuGet to get us started.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\Users\dduggan\source\repos\AWS-Status-Portal&gt;dotnet new -i Amazon.Lambda.Templates
+</code></pre></div><p>Create a new empty Lambda function:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\Users\dduggan\source\repos\AWS-Status-Portal&gt;dotnet new lambda.EmptyFunction --name NotifyEC2Webhook --profile dev --region eu-west-2
+The template &#34;Lambda Empty Function&#34; was created successfully.
+</code></pre></div><blockquote>
+<p><strong>Note:</strong> The &ldquo;dev&rdquo; profile is what I setup in the AWS Visual Studio extension.</p>
+</blockquote>
+<p>We can now add this project into our VS solution, and this is what it looks like:</p>
+<p><img src="/images/aws-status-portal/empty-lambda.png" alt="" title="Empty Lambda"></p>
+<p>The <strong>FunctionHandler</strong> takes in a string input by default - we&rsquo;ll keep this as we&rsquo;re expecting the instance_id to be the input, but we can remove the return type since we&rsquo;re not returning anything.</p>
+<p>My implementation looks like this:</p>
+<p><img src="/images/aws-status-portal/complete-lambda.png" alt="" title="Complete Lambda"></p>
+<p>You can deploy the whole project from the command-line:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\Users\dduggan\source\repos\AWS-Status-Portal\NotifyEC2Webhook\src\NotifyEC2Webhook&gt;dotnet lambda deploy-function NotifyEC2Webhook
+</code></pre></div><p>Go over to the AWS Lambda page and you&rsquo;ll see your Lambda function there:</p>
+<p><img src="/images/aws-status-portal/aws-lambda-functions.png" alt="" title="Complete Lambda"></p>
+<p>We can (and should) test this function after deployment.</p>
+<p>Click on the function name to go to its configuration options - in the top-right click <strong>Configure test events</strong> and create a new test event with a dummy instance_id (such as <strong>&ldquo;i-123456789&rdquo;</strong>).  Place a breakpoint somewhere in the webhook controller and click the <strong>Test</strong> button.</p>
+<p><img src="/images/aws-status-portal/lambda-configure-test-event.png" alt="" title="Lambda Test Event"></p>
+<p>You should see a hit in your ngrok log and your breakpoint should be hit.  Verify that the instance_id field has the correct dummy data within it.</p>
+<p>The next step is to link a CloudWatch rule to this Lambda.</p>
+<h3 id="create-cloudwatch-rule">Create CloudWatch Rule</h3>
+<p>Head on over to <strong>CloudWatch &gt; Rules &gt; Create rule.</strong></p>
+<p>Make sure <strong>Event Pattern</strong> is selected, then choose <strong>EC2</strong> from the <strong>Service Name</strong> dropdown and <strong>EC2 Instance State-change Notification</strong> from <strong>Event Type</strong>.</p>
+<p>On the right-hand-side, click <strong>Add target</strong>, select <strong>Lamba function</strong> and select your <strong>NotifyEC2Webhook</strong> function.</p>
+<p>Under <strong>Configure input</strong>, select <strong>Input Transformer</strong>.  In the <strong>Input Path</strong> (top) box, enter <strong>{ &ldquo;instance&rdquo; : &ldquo;$.detail.instance-id&rdquo; }</strong> and in the <strong>Input Template</strong> (bottom) box, enter <strong>&quot;&lt;instance&gt;&rdquo;</strong>.</p>
+<p><img src="/images/aws-status-portal/cloudwatch-rule.png" alt="" title="CloudWatch Rule"></p>
+<p>Next, click <strong>Configure details</strong>, give the rule a name (I called it <strong>EC2StateChangedRule</strong>) and click <strong>Create rule</strong>.</p>
+<p>Now all we have to do is test it&hellip;</p>
+<p><img src="/images/aws-status-portal/final.gif" alt="" title="Final"></p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
