@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>gRPC Attack Surface - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="gRPC Attack Surface"/>
+<meta name="twitter:description" content="In this post we&rsquo;ll look at methods to analyse the attack surface of gRPC services. It won&rsquo;t focus on specific vulnerabilities.
+(Google) Remote Procedure Calls gRPC is an open source RPC system developed at Google. You can think of gRPC services like APIs, although there are many key differences. Where APIs typically use JSON or XML, gRPC uses protocol buffers (protobufs) to serialise data being sent between a client and server."/>
+
+    <meta property="og:title" content="gRPC Attack Surface" />
+<meta property="og:description" content="In this post we&rsquo;ll look at methods to analyse the attack surface of gRPC services. It won&rsquo;t focus on specific vulnerabilities.
+(Google) Remote Procedure Calls gRPC is an open source RPC system developed at Google. You can think of gRPC services like APIs, although there are many key differences. Where APIs typically use JSON or XML, gRPC uses protocol buffers (protobufs) to serialise data being sent between a client and server." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/grpc-attack-surface/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-03-26T11:33:01&#43;00:00" />
+<meta property="article:modified_time" content="2021-03-26T11:33:01&#43;00:00" />
+
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">gRPC Attack Surface</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Mar 26, 2021
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          3 min read
+        </div><div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tag">
+  <title>tag</title>
+  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line>
+</svg>
+          <a class="tag" href="https://offensivedefence.co.uk/tags/grpc/">grpc</a><a class="tag" href="https://offensivedefence.co.uk/tags/web/">web</a></div></div>
+    </header>
+    <div class="post-content">
+      <p>In this post we&rsquo;ll look at methods to analyse the attack surface of gRPC services.  It won&rsquo;t focus on specific vulnerabilities.</p>
+<h2 id="google-remote-procedure-calls">(Google) Remote Procedure Calls</h2>
+<p>gRPC is an open source RPC system developed at Google.  You can think of gRPC services like APIs, although there are many key differences.  Where APIs typically use JSON or XML, gRPC uses protocol buffers (protobufs) to serialise data being sent between a client and server.  The way this serialisation happens is very strict.</p>
+<p>Take this C# model as an example:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Customer</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> FirstName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> LastName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>;}
+}
+</code></pre></div><p>A JSON serialiser may produce an output that looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> customer = <span style="color:#66d9ef">new</span> Customer { FirstName = <span style="color:#e6db74">&#34;Rasta&#34;</span>, LastName = <span style="color:#e6db74">&#34;Mouse&#34;</span> };
+<span style="color:#66d9ef">var</span> json = JsonConvert.SerializeObject(customer);
+
+Console.WriteLine(json);
+
+result =&gt; {<span style="color:#e6db74">&#34;FirstName&#34;</span>:<span style="color:#e6db74">&#34;Rasta&#34;</span>,<span style="color:#e6db74">&#34;LastName&#34;</span>:<span style="color:#e6db74">&#34;Mouse&#34;</span>}
+</code></pre></div><p>However, there&rsquo;s nothing stopping it re-ordering the properties.  Even if it did so, it can still be deserialised back into a Customer object:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> json = <span style="color:#e6db74">@&#34;{&#34;&#34;LastName&#34;&#34;:&#34;&#34;Mouse&#34;&#34;,&#34;&#34;FirstName&#34;&#34;:&#34;&#34;Rasta&#34;&#34;}&#34;</span>;
+<span style="color:#66d9ef">var</span> customer = JsonConvert.DeserializeObject&lt;Customer&gt;(json);
+
+Console.WriteLine(<span style="color:#e6db74">$&#34;{customer.FirstName} {customer.LastName}&#34;</span>);
+
+result =&gt; Rasta Mouse
+</code></pre></div><p>A gRPC protbuf not only defines the data properties, but also the order in which they should appear.  A code-first gRPC contract may look something like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[DataContract]</span>
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Customer</span>
+{
+<span style="color:#a6e22e">    [DataMember(Order = 1)]</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> FirstName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [DataMember(Order = 2)]</span>
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> LastName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+}
+</code></pre></div><p>Unless you have existing knowledge of this contract, it&rsquo;s very unlikely that you&rsquo;ll be able to get anything useful from the service.</p>
+<p>gRPC Reflection is an optional extension for servers, which provides the protobuf contracts in human-readable format.  The primary use case is to aid in client-side tool debugging - think of gRPC Reflection as Swagger for APIs.</p>
+<p><a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a> is a CLI tool for interacting with gRPC services.</p>
+<p>If reflection is not enabled, then you&rsquo;re pretty much out of luck.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 list
+Failed to list services: server does not support the reflection API
+</code></pre></div><p>Otherwise, you can start listing and describing the services.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 list
+greet.Greeter
+grpc.reflection.v1alpha.ServerReflection
+</code></pre></div><p><code>greet.Greeter</code> is the only service - to get the contract for it, use <code>grpc describe</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 describe greet.Greeter
+greet.Greeter is a service:
+service Greeter {
+  rpc SayHello ( .greet.HelloRequest ) returns ( .greet.HelloReply );
+}
+</code></pre></div><p>This service has a single method called <code>SayHello</code>.  It takes in a <code>HelloRequest</code> and returns a <code>HelloReply</code>.  For which we can also get the data members.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 describe greet.HelloRequest
+greet.HelloRequest is a message:
+message HelloRequest {
+  string name = 1;
+}
+
+PS C:\&gt; grpcurl -insecure localhost:8443 describe greet.HelloReply
+greet.HelloReply is a message:
+message HelloReply {
+  string message = 1;
+}
+</code></pre></div><p>So <code>HelloRequest</code> requires a single <code>string</code> property called <code>name</code>; and <code>HelloRequest</code> returns a single <code>string</code> property called <code>message</code>.</p>
+<p>Now we have enough information to call the service.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure -d &#39;{\&#34;name\&#34;:\&#34;Rasta\&#34;}&#39; localhost:8443 greet.Greeter.SayHello
+{
+  &#34;message&#34;: &#34;Hello Rasta&#34;
+}
+</code></pre></div><p>Note that even the property names are case-sensitive.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure -d &#39;{\&#34;Name\&#34;:\&#34;Rasta\&#34;}&#39; localhost:8443 greet.Greeter.SayHello
+Error invoking method &#34;greet.Greeter.SayHello&#34;: error getting request data: message type greet.HelloRequest has no known field named Name
+</code></pre></div><p>Hopefully this gives you some helpful pointers if you ever come across gRPC services with relfection enabled.</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>

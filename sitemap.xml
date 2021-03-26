@@ -1,183 +1,120 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
-  <url>
-    <loc>https://offensivedefence.co.uk/tags/.net/</loc>
-    <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
   <url>
     <loc>https://offensivedefence.co.uk/authors/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/tags/grpc/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/posts/grpc-attack-surface/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/posts/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/authors/rastamouse/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/tags/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/tags/web/</loc>
+    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/tags/.net/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/aws/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/aws-status-portal/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/c#/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/cloudwatch/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/ec2/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/lambda/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://offensivedefence.co.uk/</loc>
-    <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://offensivedefence.co.uk/posts/</loc>
-    <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://offensivedefence.co.uk/authors/rastamouse/</loc>
-    <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/sdk/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://offensivedefence.co.uk/tags/</loc>
-    <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/dinvoke/</loc>
     <lastmod>2021-01-24T15:19:05+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/edr/</loc>
     <lastmod>2021-01-24T15:19:05+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/syscalls/</loc>
     <lastmod>2021-01-24T15:19:05+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</loc>
     <lastmod>2021-01-24T15:19:05+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/dnlib/</loc>
     <lastmod>2020-12-31T12:00:45+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</loc>
     <lastmod>2020-12-31T12:00:45+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</loc>
     <lastmod>2020-12-30T20:25:03+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/dnlib-dllexport/</loc>
     <lastmod>2020-12-29T10:38:26+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/assembly-resolve/</loc>
     <lastmod>2020-12-21T12:06:54+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</loc>
     <lastmod>2020-12-02T10:52:26+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/authors/ccob/</loc>
     <lastmod>2020-11-20T16:22:10+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/module-stomping/</loc>
     <lastmod>2020-11-20T16:22:10+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/covenant/</loc>
     <lastmod>2020-11-07T11:54:14+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</loc>
     <lastmod>2020-11-07T11:54:14+00:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/making-amsi-jump/</loc>
     <lastmod>2020-06-16T10:52:27+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/authors/furby/</loc>
     <lastmod>2020-06-10T14:07:13+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/is-the-grass-greener/</loc>
     <lastmod>2020-06-10T14:07:13+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/tags/sharpsploit/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/sharpsploit-16/</loc>
     <lastmod>2020-06-09T13:12:56+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/authors/cyberzombie/</loc>
     <lastmod>2020-06-05T10:04:14+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/posts/offensive-defence/</loc>
     <lastmod>2020-06-05T10:04:14+01:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/categories/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://offensivedefence.co.uk/authors/rythmstick/</loc>
   </url>
-  
 </urlset>

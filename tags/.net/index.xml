@@ -5,11 +5,7 @@
     <link>https://offensivedefence.co.uk/tags/.net/</link>
     <description>Recent content in .net on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sun, 14 Feb 2021 09:46:31 +0000</lastBuildDate>
-    
-	<atom:link href="https://offensivedefence.co.uk/tags/.net/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sun, 14 Feb 2021 09:46:31 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/tags/.net/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>AWS Status Portal</title>
       <link>https://offensivedefence.co.uk/posts/aws-status-portal/</link>

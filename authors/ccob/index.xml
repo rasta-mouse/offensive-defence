@@ -5,11 +5,7 @@
     <link>https://offensivedefence.co.uk/authors/ccob/</link>
     <description>Recent content in Ceri Coburn on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Fri, 20 Nov 2020 16:22:10 +0000</lastBuildDate>
-    
-	<atom:link href="https://offensivedefence.co.uk/authors/ccob/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Fri, 20 Nov 2020 16:22:10 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/authors/ccob/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Module Stomping in C#</title>
       <link>https://offensivedefence.co.uk/posts/module-stomping/</link>
