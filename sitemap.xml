@@ -2,8 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://offensivedefence.co.uk/tags/.net/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
     <loc>https://offensivedefence.co.uk/authors/</loc>
-    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/tags/c#/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/tags/ldap/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/posts/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/authors/rastamouse/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/tags/</loc>
+    <lastmod>2021-04-28T16:32:31+01:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/tags/grpc/</loc>
     <lastmod>2021-03-26T11:33:01+00:00</lastmod>
@@ -11,31 +35,13 @@
     <loc>https://offensivedefence.co.uk/posts/grpc-attack-surface/</loc>
     <lastmod>2021-03-26T11:33:01+00:00</lastmod>
   </url><url>
-    <loc>https://offensivedefence.co.uk/</loc>
-    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
-  </url><url>
-    <loc>https://offensivedefence.co.uk/posts/</loc>
-    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
-  </url><url>
-    <loc>https://offensivedefence.co.uk/authors/rastamouse/</loc>
-    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
-  </url><url>
-    <loc>https://offensivedefence.co.uk/tags/</loc>
-    <lastmod>2021-03-26T11:33:01+00:00</lastmod>
-  </url><url>
     <loc>https://offensivedefence.co.uk/tags/web/</loc>
     <lastmod>2021-03-26T11:33:01+00:00</lastmod>
-  </url><url>
-    <loc>https://offensivedefence.co.uk/tags/.net/</loc>
-    <lastmod>2021-02-14T09:46:31+00:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/tags/aws/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/posts/aws-status-portal/</loc>
-    <lastmod>2021-02-14T09:46:31+00:00</lastmod>
-  </url><url>
-    <loc>https://offensivedefence.co.uk/tags/c#/</loc>
     <lastmod>2021-02-14T09:46:31+00:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/tags/cloudwatch/</loc>
