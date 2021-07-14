@@ -5,7 +5,18 @@
     <link>https://offensivedefence.co.uk/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 28 Apr 2021 16:32:31 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 13 Jul 2021 13:43:11 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>AWS Status Portal, Terraform &amp; Ansible</title>
+      <link>https://offensivedefence.co.uk/posts/aws-portal-terraform/</link>
+      <pubDate>Tue, 13 Jul 2021 13:43:11 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/aws-portal-terraform/</guid>
+      <description>[Skip to the bottom of the page for the video demo]
+In a previous blog post, I outlined how to build a status portal for EC2 instances running in AWS. The portal itself was a Blazor app which used the AWS SDK to interact with (list/start/stop) the virtual machines.
+Heath Adams posted a question to Twitter about building a CMS that could use AWS and Terraform to manage lab deployments.</description>
+    </item>
+    
     <item>
       <title>Domain Enumeration Tool</title>
       <link>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</link>
