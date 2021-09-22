@@ -5,7 +5,18 @@
     <link>https://offensivedefence.co.uk/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 13 Jul 2021 13:43:11 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 22 Sep 2021 10:11:26 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>C# Process Class Primer</title>
+      <link>https://offensivedefence.co.uk/posts/csharp-process-class/</link>
+      <pubDate>Wed, 22 Sep 2021 10:11:26 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/csharp-process-class/</guid>
+      <description>This post was requested from a Patron and will serve as a short primer for using the Process class in C#. This class is part of the System.Diagnostics namespace and is useful for enumerating, starting, and killing processes on a system.
+Enumerating Processes The Process class has 4 methods for enumerating processes on a system (which are quite self-explanatory):
+ GetCurrentProcess GetProcessesByName GetProcessById GetProcesses  Process.GetProcesses() will return a Process[] of every process running on the local system.</description>
+    </item>
+    
     <item>
       <title>AWS Status Portal, Terraform &amp; Ansible</title>
       <link>https://offensivedefence.co.uk/posts/aws-portal-terraform/</link>
