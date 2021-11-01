@@ -5,7 +5,17 @@
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 22 Sep 2021 10:11:26 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 12 Oct 2021 09:25:13 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Lateral Movement 101</title>
+      <link>https://offensivedefence.co.uk/posts/lateral-movement-101/</link>
+      <pubDate>Tue, 12 Oct 2021 09:25:13 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/lateral-movement-101/</guid>
+      <description>This post was requested by a Patron and will provide a crash course in lateral movement techniques on Windows using both native utilities and custom C# tooling.
+The most common lateral movement techniques are performed via legitimate management channels including Remote Desktop (RDP), Windows Remote Management (WinRM) and Windows Management Instrumentation (WMI). Platforms such as Windows Server Update Services (WSUS) and System Center Configuration Manager (SCCM) can also be abused.</description>
+    </item>
+    
     <item>
       <title>C# Process Class Primer</title>
       <link>https://offensivedefence.co.uk/posts/csharp-process-class/</link>

