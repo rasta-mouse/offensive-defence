@@ -5,7 +5,17 @@
     <link>https://offensivedefence.co.uk/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 12 Oct 2021 09:25:13 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 29 Jan 2022 15:54:31 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Notepad&#43;&#43; Plugins for Persistence</title>
+      <link>https://offensivedefence.co.uk/posts/notepad&#43;&#43;/</link>
+      <pubDate>Sat, 29 Jan 2022 15:54:31 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/notepad&#43;&#43;/</guid>
+      <description>Notepad++ is a popular Windows text editor, which has an extension capability in the way of plugins. The Plugin Manager allows users to download and install approved plugins, but you can also install your own plugins locally. A plugin can be built in a variety of languages including C++ and C#.
+To install a custom plugin, the DLL can simply be dropped inside %PROGRAMFILES%\Notepad++\plugins\pluginName\pluginName.dll. The up-side is that no user interaction is required to load or activate the plugin.</description>
+    </item>
+    
     <item>
       <title>Lateral Movement 101</title>
       <link>https://offensivedefence.co.uk/posts/lateral-movement-101/</link>
