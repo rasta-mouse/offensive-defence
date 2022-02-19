@@ -5,7 +5,17 @@
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sat, 29 Jan 2022 15:54:31 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 18 Feb 2022 20:14:12 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Building an API Client from Swagger</title>
+      <link>https://offensivedefence.co.uk/posts/api-client/</link>
+      <pubDate>Fri, 18 Feb 2022 20:14:12 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/api-client/</guid>
+      <description>This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client. We&amp;rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &amp;ldquo;people&amp;rdquo;.
+API Server This is the model to represent a person object, which will sit at the domain layer. Each person will have a unquie Id (think of this as a primary key in database parlance).</description>
+    </item>
+    
     <item>
       <title>Notepad&#43;&#43; Plugins for Persistence</title>
       <link>https://offensivedefence.co.uk/posts/notepad&#43;&#43;/</link>

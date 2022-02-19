@@ -3,7 +3,7 @@
   <head>
     <title>gRPC Attack Surface - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.92.2" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@
 (Google) Remote Procedure Calls gRPC is an open source RPC system developed at Google. You can think of gRPC services like APIs, although there are many key differences. Where APIs typically use JSON or XML, gRPC uses protocol buffers (protobufs) to serialise data being sent between a client and server." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/grpc-attack-surface/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-03-26T11:33:01&#43;00:00" />
-<meta property="article:modified_time" content="2021-03-26T11:33:01&#43;00:00" />
+<meta property="article:published_time" content="2021-03-26T11:33:01+00:00" />
+<meta property="article:modified_time" content="2021-03-26T11:33:01+00:00" />
 
 
 
@@ -71,27 +71,27 @@
 <h2 id="google-remote-procedure-calls">(Google) Remote Procedure Calls</h2>
 <p>gRPC is an open source RPC system developed at Google.  You can think of gRPC services like APIs, although there are many key differences.  Where APIs typically use JSON or XML, gRPC uses protocol buffers (protobufs) to serialise data being sent between a client and server.  The way this serialisation happens is very strict.</p>
 <p>Take this C# model as an example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Customer</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Customer</span>
 {
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> FirstName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> LastName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>;}
 }
 </code></pre></div><p>A JSON serialiser may produce an output that looks like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> customer = <span style="color:#66d9ef">new</span> Customer { FirstName = <span style="color:#e6db74">&#34;Rasta&#34;</span>, LastName = <span style="color:#e6db74">&#34;Mouse&#34;</span> };
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> customer = <span style="color:#66d9ef">new</span> Customer { FirstName = <span style="color:#e6db74">&#34;Rasta&#34;</span>, LastName = <span style="color:#e6db74">&#34;Mouse&#34;</span> };
 <span style="color:#66d9ef">var</span> json = JsonConvert.SerializeObject(customer);
 
 Console.WriteLine(json);
 
 result =&gt; {<span style="color:#e6db74">&#34;FirstName&#34;</span>:<span style="color:#e6db74">&#34;Rasta&#34;</span>,<span style="color:#e6db74">&#34;LastName&#34;</span>:<span style="color:#e6db74">&#34;Mouse&#34;</span>}
 </code></pre></div><p>However, there&rsquo;s nothing stopping it re-ordering the properties.  Even if it did so, it can still be deserialised back into a Customer object:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> json = <span style="color:#e6db74">@&#34;{&#34;&#34;LastName&#34;&#34;:&#34;&#34;Mouse&#34;&#34;,&#34;&#34;FirstName&#34;&#34;:&#34;&#34;Rasta&#34;&#34;}&#34;</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> json = <span style="color:#e6db74">@&#34;{&#34;&#34;LastName&#34;&#34;:&#34;&#34;Mouse&#34;&#34;,&#34;&#34;FirstName&#34;&#34;:&#34;&#34;Rasta&#34;&#34;}&#34;</span>;
 <span style="color:#66d9ef">var</span> customer = JsonConvert.DeserializeObject&lt;Customer&gt;(json);
 
 Console.WriteLine(<span style="color:#e6db74">$&#34;{customer.FirstName} {customer.LastName}&#34;</span>);
 
 result =&gt; Rasta Mouse
 </code></pre></div><p>A gRPC protbuf not only defines the data properties, but also the order in which they should appear.  A code-first gRPC contract may look something like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[DataContract]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[DataContract]</span>
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Customer</span>
 {
 <span style="color:#a6e22e">    [DataMember(Order = 1)]</span>
@@ -104,20 +104,20 @@ result =&gt; Rasta Mouse
 <p>gRPC Reflection is an optional extension for servers, which provides the protobuf contracts in human-readable format.  The primary use case is to aid in client-side tool debugging - think of gRPC Reflection as Swagger for APIs.</p>
 <p><a href="https://github.com/fullstorydev/grpcurl">gRPCurl</a> is a CLI tool for interacting with gRPC services.</p>
 <p>If reflection is not enabled, then you&rsquo;re pretty much out of luck.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 list
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 list
 Failed to list services: server does not support the reflection API
 </code></pre></div><p>Otherwise, you can start listing and describing the services.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 list
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 list
 greet.Greeter
 grpc.reflection.v1alpha.ServerReflection
 </code></pre></div><p><code>greet.Greeter</code> is the only service - to get the contract for it, use <code>grpc describe</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 describe greet.Greeter
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 describe greet.Greeter
 greet.Greeter is a service:
 service Greeter {
   rpc SayHello ( .greet.HelloRequest ) returns ( .greet.HelloReply );
 }
 </code></pre></div><p>This service has a single method called <code>SayHello</code>.  It takes in a <code>HelloRequest</code> and returns a <code>HelloReply</code>.  For which we can also get the data members.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 describe greet.HelloRequest
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure localhost:8443 describe greet.HelloRequest
 greet.HelloRequest is a message:
 message HelloRequest {
   string name = 1;
@@ -130,12 +130,12 @@ message HelloReply {
 }
 </code></pre></div><p>So <code>HelloRequest</code> requires a single <code>string</code> property called <code>name</code>; and <code>HelloRequest</code> returns a single <code>string</code> property called <code>message</code>.</p>
 <p>Now we have enough information to call the service.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure -d &#39;{\&#34;name\&#34;:\&#34;Rasta\&#34;}&#39; localhost:8443 greet.Greeter.SayHello
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure -d &#39;{\&#34;name\&#34;:\&#34;Rasta\&#34;}&#39; localhost:8443 greet.Greeter.SayHello
 {
   &#34;message&#34;: &#34;Hello Rasta&#34;
 }
 </code></pre></div><p>Note that even the property names are case-sensitive.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure -d &#39;{\&#34;Name\&#34;:\&#34;Rasta\&#34;}&#39; localhost:8443 greet.Greeter.SayHello
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; grpcurl -insecure -d &#39;{\&#34;Name\&#34;:\&#34;Rasta\&#34;}&#39; localhost:8443 greet.Greeter.SayHello
 Error invoking method &#34;greet.Greeter.SayHello&#34;: error getting request data: message type greet.HelloRequest has no known field named Name
 </code></pre></div><p>Hopefully this gives you some helpful pointers if you ever come across gRPC services with relfection enabled.</p>
 

