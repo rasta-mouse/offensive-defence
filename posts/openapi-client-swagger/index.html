@@ -112,7 +112,7 @@ API Server This is the model to represent a person object, which will sit at the
 </span><span style="color:#75715e"></span>    <span style="color:#66d9ef">bool</span> RemovePerson(Person person);
 }
 </code></pre></div><p>The interface will be dependancy injected into the API controller and represents a contract between the API and domain layers.  It should obviously expose methods sufficient to support the functionality we want to offer through the API.  As a side-note, putting the comments above the method definitions is useful because it populates intellisense when calling them.</p>
-<p><img src="/images/api-client/intellisense.png" alt="" title="Interface Intellisense"></p>
+<p><img src="/images/openapi-client/intellisense.png" alt="" title="Interface Intellisense"></p>
 <p>My demo implementation of this service uses a simple in-memoy list to store the objects.  All our methods have to do is get, add, remove and update objects in this list:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
 
@@ -257,9 +257,9 @@ API Server This is the model to represent a person object, which will sit at the
 <p>First - some of these have a return type of <code>ActionResult&lt;T&gt;</code> and some just an <code>IActionResult</code>.  <code>IActionResult</code> tells the controller that we&rsquo;re returning an HTTP status (200, 404, 500 etc), but not specifically what data those responses will contain; whereas <code>ActionResult&lt;T&gt;</code> tells the controller exactly what data type will be returned.  This is important for the OpenAPI definition so that consumers know exactly what data to expect from each endpoint.</p>
 <p>Second - I&rsquo;ve given each endpoint a <code>Name</code>, such as <code>Name = &quot;GetAllPeople&quot;</code>.  These will be used by the auto-code generator to give the methods in our C# code user-friendly names.  Otherwise, it would default to <code>PeopleAsync</code>, <code>People2Async</code>, <code>People3Async</code> etc.</p>
 <p>Running the server, Swagger will list each API endpoint we&rsquo;ve defined.</p>
-<p><img src="/images/api-client/swagger.png" alt="" title="Swagger"></p>
+<p><img src="/images/openapi-client/swagger.png" alt="" title="Swagger"></p>
 <p>Furthermore, if we expand the POST endpoint, it knows that we provide a <code>PersonRequest</code> object in the request body and that it returns a <code>Person</code> object.</p>
-<p><img src="/images/api-client/swagger-post.png" alt="" title="Swagger POST"></p>
+<p><img src="/images/openapi-client/swagger-post.png" alt="" title="Swagger POST"></p>
 <p>We can test the API in Swagger by creating a person:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
   <span style="color:#f92672">&#34;firstName&#34;</span>: <span style="color:#e6db74">&#34;Robin&#34;</span>,
@@ -285,7 +285,7 @@ API Server This is the model to represent a person object, which will sit at the
 <h2 id="api-client">API Client</h2>
 <p>This is the really easy part.</p>
 <p>Swagger allow us to download the OpenAPI definition in JSON format.  For me, the URL was: <em>https://localhost:7014/swagger/v1/swagger.json</em>.  Create any .NET client app you want (Console, WPF, etc).  Then in Visual Studio, right-click that project and select <strong>Add &gt; Service Reference</strong>.  Select OpenAPI and provide it the Swagger JSON file.</p>
-<p><img src="/images/api-client/service-reference.png" alt="" title="Add Service Reference"></p>
+<p><img src="/images/openapi-client/service-reference.png" alt="" title="Add Service Reference"></p>
 <p>When you click Finish, VS will install the necessary NuGet packages and auto-generate the necessary C# code.  It will save to <code>obj\swaggerClient.cs</code>.</p>
 <p>Contruct the <code>DemoApi</code> client by providing the base address of the API and a new <code>HttpClient</code>.  Then it&rsquo;s simply a case of calling the methods you want.  In this example, I create a new person and print the output to the console.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoClient;
