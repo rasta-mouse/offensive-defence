@@ -68,7 +68,7 @@ public interface IPersonService
 
 The interface will be dependancy injected into the API controller and represents a contract between the API and domain layers.  It should obviously expose methods sufficient to support the functionality we want to offer through the API.  As a side-note, putting the comments above the method definitions is useful because it populates intellisense when calling them.
 
-![](/images/api-client/intellisense.png "Interface Intellisense")
+![](/images/openapi-client/intellisense.png "Interface Intellisense")
 
 My demo implementation of this service uses a simple in-memoy list to store the objects.  All our methods have to do is get, add, remove and update objects in this list:
 
@@ -230,11 +230,11 @@ Second - I've given each endpoint a `Name`, such as `Name = "GetAllPeople"`.  Th
 
 Running the server, Swagger will list each API endpoint we've defined.
 
-![](/images/api-client/swagger.png "Swagger")
+![](/images/openapi-client/swagger.png "Swagger")
 
 Furthermore, if we expand the POST endpoint, it knows that we provide a `PersonRequest` object in the request body and that it returns a `Person` object.
 
-![](/images/api-client/swagger-post.png "Swagger POST")
+![](/images/openapi-client/swagger-post.png "Swagger POST")
 
 We can test the API in Swagger by creating a person:
 
@@ -277,7 +277,7 @@ This is the really easy part.
 
 Swagger allow us to download the OpenAPI definition in JSON format.  For me, the URL was: *https://localhost:7014/swagger/v1/swagger.json*.  Create any .NET client app you want (Console, WPF, etc).  Then in Visual Studio, right-click that project and select **Add > Service Reference**.  Select OpenAPI and provide it the Swagger JSON file.
 
-![](/images/api-client/service-reference.png "Add Service Reference")
+![](/images/openapi-client/service-reference.png "Add Service Reference")
 
 When you click Finish, VS will install the necessary NuGet packages and auto-generate the necessary C# code.  It will save to `obj\swaggerClient.cs`.
 
