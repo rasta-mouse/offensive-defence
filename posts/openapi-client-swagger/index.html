@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Building an API Client from Swagger - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Building an API Client from Swagger"/>
+<meta name="twitter:description" content="This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client. We&rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &ldquo;people&rdquo;.
+API Server This is the model to represent a person object, which will sit at the domain layer. Each person will have a unquie Id (think of this as a primary key in database parlance)."/>
+
+    <meta property="og:title" content="Building an API Client from Swagger" />
+<meta property="og:description" content="This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client. We&rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &ldquo;people&rdquo;.
+API Server This is the model to represent a person object, which will sit at the domain layer. Each person will have a unquie Id (think of this as a primary key in database parlance)." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/openapi-client-swagger/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-02-18T20:14:12+00:00" />
+<meta property="article:modified_time" content="2022-02-18T20:14:12+00:00" />
+
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Building an API Client from Swagger</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Feb 18, 2022
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          6 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <p>This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client.  We&rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &ldquo;people&rdquo;.</p>
+<h2 id="api-server">API Server</h2>
+<p>This is the model to represent a person object, which will sit at the domain layer.  Each person will have a unquie Id (think of this as a primary key in database parlance).  This Id will be used to find a person after they&rsquo;ve been created.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Person</span>
+{
+    <span style="color:#66d9ef">public</span> Guid Id { <span style="color:#66d9ef">get</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> FirstName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> LastName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> EmailAddress { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+
+    <span style="color:#66d9ef">public</span> Person()
+    {
+        Id = Guid.NewGuid();
+    }
+}
+</code></pre></div><p>We need a service that will handle managing our people.  The interface for which could look like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IPersonService
+{
+    <span style="color:#75715e">/// &lt;summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// Gets all people
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;/summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;returns&gt;An IEnumerable of Person&lt;/returns&gt;
+</span><span style="color:#75715e"></span>    IEnumerable&lt;Person&gt; GetPeople();
+    
+    <span style="color:#75715e">/// &lt;summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// Adds a new person
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;/summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;param name=&#34;person&#34;&gt;&lt;/param&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;returns&gt;True if successful&lt;/returns&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">bool</span> AddPerson(Person person);
+    
+    <span style="color:#75715e">/// &lt;summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// Gets a single person by their Id
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;/summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;param name=&#34;id&#34;&gt;&lt;/param&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;returns&gt;A person object&lt;/returns&gt;
+</span><span style="color:#75715e"></span>    Person GetPerson(Guid id);
+    
+    <span style="color:#75715e">/// &lt;summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// Removes a person
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;/summary&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;param name=&#34;person&#34;&gt;&lt;/param&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">/// &lt;returns&gt;True if successful&lt;/returns&gt;
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">bool</span> RemovePerson(Person person);
+}
+</code></pre></div><p>The interface will be dependancy injected into the API controller and represents a contract between the API and domain layers.  It should obviously expose methods sufficient to support the functionality we want to offer through the API.  As a side-note, putting the comments above the method definitions is useful because it populates intellisense when calling them.</p>
+<p><img src="/images/api-client/intellisense.png" alt="" title="Interface Intellisense"></p>
+<p>My demo implementation of this service uses a simple in-memoy list to store the objects.  All our methods have to do is get, add, remove and update objects in this list:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PersonService</span> : IPersonService
+{
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> List&lt;Person&gt; <span style="color:#ae81ff">_</span>people = <span style="color:#66d9ef">new</span>();
+    
+    <span style="color:#66d9ef">public</span> IEnumerable&lt;Person&gt; GetPeople()
+    {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">_</span>people;
+    }
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">bool</span> AddPerson(Person person)
+    {
+        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>people.Contains(person))
+        {
+            <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>;
+        }
+        
+        <span style="color:#ae81ff">_</span>people.Add(person);
+        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
+    }
+
+    <span style="color:#66d9ef">public</span> Person GetPerson(Guid id)
+    {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">_</span>people.FirstOrDefault(p =&gt; p.Id.Equals(id));
+    }
+
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">bool</span> RemovePerson(Person person)
+    {
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">_</span>people.Remove(person);
+    }
+}
+</code></pre></div><p>The API model to create a new person is as follows (this is the data a user will POST to the API).  When we create a new person, the caller should not need to specify an Id.  We rely on the server to generate it and tell us what it is.  This is one reason why we have different models for the API, domain and even storage layers.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PersonRequest</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> FirstName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> LastName { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> EmailAddress { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
+}
+</code></pre></div><p>The API controller contains the actual HTTP endpoints.  We specify these as GET, POST, PUT and DELETE depending on the action that needs to be undertaken.  Within each method, we call the appropriate method on our interface.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> Microsoft.AspNetCore.Mvc;
+
+<span style="color:#66d9ef">namespace</span> DemoAPI.Controllers;
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">[ApiController]</span>
+<span style="color:#a6e22e">[Route(&#34;people&#34;)]</span>
+<span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PeopleController</span> : ControllerBase
+{
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> IPersonService <span style="color:#ae81ff">_</span>personService;
+
+    <span style="color:#66d9ef">public</span> PeopleController(IPersonService personService)
+    {
+        <span style="color:#ae81ff">_</span>personService = personService;
+    }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [HttpGet (Name = &#34;GetAllPeople&#34;)]</span>
+    <span style="color:#66d9ef">public</span> ActionResult&lt;IEnumerable&lt;Person&gt;&gt; GetPeople()
+    {
+        <span style="color:#66d9ef">var</span> people = <span style="color:#ae81ff">_</span>personService.GetPeople();
+        <span style="color:#66d9ef">return</span> Ok(people);
+    }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [HttpGet(&#34;{id:guid}&#34;, Name = &#34;GetPersonById&#34;)]</span>
+    <span style="color:#66d9ef">public</span> ActionResult&lt;Person&gt; GetPerson(Guid id)
+    {
+        <span style="color:#66d9ef">var</span> person = <span style="color:#ae81ff">_</span>personService.GetPerson(id);
+
+        <span style="color:#66d9ef">if</span> (person <span style="color:#66d9ef">is</span> <span style="color:#66d9ef">null</span>)
+        {
+            <span style="color:#66d9ef">return</span> NotFound();
+        }
+
+        <span style="color:#66d9ef">return</span> Ok(person);
+    }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [HttpPost(Name = &#34;CreatePerson&#34;)]</span>
+    <span style="color:#66d9ef">public</span> ActionResult&lt;Person&gt; AddPerson([FromBody] PersonRequest request)
+    {
+        <span style="color:#66d9ef">var</span> person = <span style="color:#66d9ef">new</span> Person
+        {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            EmailAddress = request.EmailAddress
+        };
+        
+        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.AddPerson(person))
+        {
+            <span style="color:#66d9ef">var</span> path = <span style="color:#e6db74">$&#34;{Request.Scheme}://{Request.Host}{Request.Path.ToUriComponent()}/{person.Id}&#34;</span>;
+            <span style="color:#66d9ef">return</span> Created(path, person);
+        }
+
+        <span style="color:#66d9ef">return</span> BadRequest();
+    }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [HttpPut(&#34;{id:guid}&#34;, Name = &#34;UpdatePersonById&#34;)]</span>
+    <span style="color:#66d9ef">public</span> IActionResult UpdatePerson(Guid id, [FromBody] PersonRequest request)
+    {
+        <span style="color:#66d9ef">var</span> person = <span style="color:#ae81ff">_</span>personService.GetPerson(id);
+
+        <span style="color:#66d9ef">if</span> (person <span style="color:#66d9ef">is</span> <span style="color:#66d9ef">null</span>)
+        {
+            <span style="color:#66d9ef">return</span> NotFound();
+        }
+
+        person.FirstName = request.FirstName;
+        person.LastName = request.LastName;
+        person.EmailAddress = request.EmailAddress;
+
+        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.RemovePerson(person))
+        {
+            <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.AddPerson(person))
+            {
+                <span style="color:#66d9ef">return</span> NoContent();
+            }    
+        }
+
+        <span style="color:#66d9ef">return</span> BadRequest();
+    }
+<span style="color:#a6e22e">
+</span><span style="color:#a6e22e">    [HttpDelete(&#34;{id:guid}&#34;, Name = &#34;DeletePersonById&#34;)]</span>
+    <span style="color:#66d9ef">public</span> IActionResult DeletePerson(Guid id)
+    {
+        <span style="color:#66d9ef">var</span> person = <span style="color:#ae81ff">_</span>personService.GetPerson(id);
+
+        <span style="color:#66d9ef">if</span> (person <span style="color:#66d9ef">is</span> <span style="color:#66d9ef">null</span>)
+        {
+            <span style="color:#66d9ef">return</span> NotFound();
+        }
+
+        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.RemovePerson(person))
+        {
+            <span style="color:#66d9ef">return</span> NoContent();
+        }
+
+        <span style="color:#66d9ef">return</span> BadRequest();
+    }
+}
+</code></pre></div><p>There are two important aspects here to hightlight.</p>
+<p>First - some of these have a return type of <code>ActionResult&lt;T&gt;</code> and some just an <code>IActionResult</code>.  <code>IActionResult</code> tells the controller that we&rsquo;re returning an HTTP status (200, 404, 500 etc), but not specifically what data those responses will contain; whereas <code>ActionResult&lt;T&gt;</code> tells the controller exactly what data type will be returned.  This is important for the OpenAPI definition so that consumers know exactly what data to expect from each endpoint.</p>
+<p>Second - I&rsquo;ve given each endpoint a <code>Name</code>, such as <code>Name = &quot;GetAllPeople&quot;</code>.  These will be used by the auto-code generator to give the methods in our C# code user-friendly names.  Otherwise, it would default to <code>PeopleAsync</code>, <code>People2Async</code>, <code>People3Async</code> etc.</p>
+<p>Running the server, Swagger will list each API endpoint we&rsquo;ve defined.</p>
+<p><img src="/images/api-client/swagger.png" alt="" title="Swagger"></p>
+<p>Furthermore, if we expand the POST endpoint, it knows that we provide a <code>PersonRequest</code> object in the request body and that it returns a <code>Person</code> object.</p>
+<p><img src="/images/api-client/swagger-post.png" alt="" title="Swagger POST"></p>
+<p>We can test the API in Swagger by creating a person:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;firstName&#34;</span>: <span style="color:#e6db74">&#34;Robin&#34;</span>,
+  <span style="color:#f92672">&#34;lastName&#34;</span>: <span style="color:#e6db74">&#34;Hood&#34;</span>,
+  <span style="color:#f92672">&#34;emailAddress&#34;</span>: <span style="color:#e6db74">&#34;rhood@sherwood.forest&#34;</span>
+}
+</code></pre></div><p>The response we get is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;5d4764ec-8859-46bf-a29d-f2717e4cc077&#34;</span>,
+  <span style="color:#f92672">&#34;firstName&#34;</span>: <span style="color:#e6db74">&#34;Robin&#34;</span>,
+  <span style="color:#f92672">&#34;lastName&#34;</span>: <span style="color:#e6db74">&#34;Hood&#34;</span>,
+  <span style="color:#f92672">&#34;emailAddress&#34;</span>: <span style="color:#e6db74">&#34;rhood@sherwood.forest&#34;</span>
+}
+</code></pre></div><p>As well as the <code>Person</code> object, the response header contains a <code>Location</code>:  <code>location: https://localhost:7014/people/5d4764ec-8859-46bf-a29d-f2717e4cc077</code>.  We can GET this URL to get the same person back again.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ curl -k -s https://localhost:7014/people/5d4764ec-8859-46bf-a29d-f2717e4cc077 | jq
+{
+  &#34;id&#34;: &#34;5d4764ec-8859-46bf-a29d-f2717e4cc077&#34;,
+  &#34;firstName&#34;: &#34;Robin&#34;,
+  &#34;lastName&#34;: &#34;Hood&#34;,
+  &#34;emailAddress&#34;: &#34;rhood@sherwood.forest&#34;
+}
+</code></pre></div><p>Have a play with the API to make sure it all works&hellip;</p>
+<h2 id="api-client">API Client</h2>
+<p>This is the really easy part.</p>
+<p>Swagger allow us to download the OpenAPI definition in JSON format.  For me, the URL was: <em>https://localhost:7014/swagger/v1/swagger.json</em>.  Create any .NET client app you want (Console, WPF, etc).  Then in Visual Studio, right-click that project and select <strong>Add &gt; Service Reference</strong>.  Select OpenAPI and provide it the Swagger JSON file.</p>
+<p><img src="/images/api-client/service-reference.png" alt="" title="Add Service Reference"></p>
+<p>When you click Finish, VS will install the necessary NuGet packages and auto-generate the necessary C# code.  It will save to <code>obj\swaggerClient.cs</code>.</p>
+<p>Contruct the <code>DemoApi</code> client by providing the base address of the API and a new <code>HttpClient</code>.  Then it&rsquo;s simply a case of calling the methods you want.  In this example, I create a new person and print the output to the console.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoClient;
+
+<span style="color:#66d9ef">internal</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
+{
+    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">async</span> Task Main(<span style="color:#66d9ef">string</span>[] args)
+    {
+        <span style="color:#75715e">// create new instance of the API Client
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">var</span> client = <span style="color:#66d9ef">new</span> DemoApi(<span style="color:#e6db74">&#34;https://localhost:7014/&#34;</span>, <span style="color:#66d9ef">new</span> HttpClient());
+
+        <span style="color:#75715e">// build the request
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">var</span> request = <span style="color:#66d9ef">new</span> PersonRequest
+        {
+            FirstName = <span style="color:#e6db74">&#34;Maid&#34;</span>,
+            LastName = <span style="color:#e6db74">&#34;Marian&#34;</span>,
+            EmailAddress = <span style="color:#e6db74">&#34;mmarian@sherwood.forest&#34;</span>
+        };
+
+        <span style="color:#75715e">// post to the server
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">var</span> person = <span style="color:#66d9ef">await</span> client.CreatePersonAsync(request);
+
+        <span style="color:#75715e">// print person to the console
+</span><span style="color:#75715e"></span>        Console.WriteLine(<span style="color:#e6db74">$&#34;Id: {person.Id}&#34;</span>);
+        Console.WriteLine(<span style="color:#e6db74">$&#34;First Name: {person.FirstName}&#34;</span>);
+        Console.WriteLine(<span style="color:#e6db74">$&#34;Last Name: {person.LastName}&#34;</span>);
+        Console.WriteLine(<span style="color:#e6db74">$&#34;Email: {person.EmailAddress}&#34;</span>);
+    }
+}
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Id: 24d745ef-0af6-4e47-9fbc-9a8908a8ca40
+First Name: Maid
+Last Name: Marian
+Email: mmarian@sherwood.forest
+</code></pre></div>
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>

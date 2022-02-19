@@ -8,10 +8,10 @@
     <lastBuildDate>Fri, 18 Feb 2022 20:14:12 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Building an API Client from Swagger</title>
-      <link>https://offensivedefence.co.uk/posts/api-client/</link>
+      <link>https://offensivedefence.co.uk/posts/openapi-client-swagger/</link>
       <pubDate>Fri, 18 Feb 2022 20:14:12 +0000</pubDate>
       
-      <guid>https://offensivedefence.co.uk/posts/api-client/</guid>
+      <guid>https://offensivedefence.co.uk/posts/openapi-client-swagger/</guid>
       <description>This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client. We&amp;rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &amp;ldquo;people&amp;rdquo;.
 API Server This is the model to represent a person object, which will sit at the domain layer. Each person will have a unquie Id (think of this as a primary key in database parlance).</description>
     </item>
