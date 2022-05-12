@@ -3,7 +3,7 @@
   <head>
     <title>Building an API Client from Swagger - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.82.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@ API Server This is the model to represent a person object, which will sit at the
 API Server This is the model to represent a person object, which will sit at the domain layer. Each person will have a unquie Id (think of this as a primary key in database parlance)." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/openapi-client-swagger/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2022-02-18T20:14:12+00:00" />
-<meta property="article:modified_time" content="2022-02-18T20:14:12+00:00" />
+<meta property="article:published_time" content="2022-02-18T20:14:12&#43;00:00" />
+<meta property="article:modified_time" content="2022-02-18T20:14:12&#43;00:00" />
 
 
 
@@ -65,7 +65,7 @@ API Server This is the model to represent a person object, which will sit at the
       <p>This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client.  We&rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &ldquo;people&rdquo;.</p>
 <h2 id="api-server">API Server</h2>
 <p>This is the model to represent a person object, which will sit at the domain layer.  Each person will have a unquie Id (think of this as a primary key in database parlance).  This Id will be used to find a person after they&rsquo;ve been created.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
 
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Person</span>
 {
@@ -80,7 +80,7 @@ API Server This is the model to represent a person object, which will sit at the
     }
 }
 </code></pre></div><p>We need a service that will handle managing our people.  The interface for which could look like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
 
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IPersonService
 {
@@ -114,40 +114,40 @@ API Server This is the model to represent a person object, which will sit at the
 </code></pre></div><p>The interface will be dependancy injected into the API controller and represents a contract between the API and domain layers.  It should obviously expose methods sufficient to support the functionality we want to offer through the API.  As a side-note, putting the comments above the method definitions is useful because it populates intellisense when calling them.</p>
 <p><img src="/images/openapi-client/intellisense.png" alt="" title="Interface Intellisense"></p>
 <p>My demo implementation of this service uses a simple in-memoy list to store the objects.  All our methods have to do is get, add, remove and update objects in this list:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
 
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PersonService</span> : IPersonService
 {
-    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> List&lt;Person&gt; <span style="color:#ae81ff">_</span>people = <span style="color:#66d9ef">new</span>();
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> List&lt;Person&gt; _people = <span style="color:#66d9ef">new</span>();
     
     <span style="color:#66d9ef">public</span> IEnumerable&lt;Person&gt; GetPeople()
     {
-        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">_</span>people;
+        <span style="color:#66d9ef">return</span> _people;
     }
 
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">bool</span> AddPerson(Person person)
     {
-        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>people.Contains(person))
+        <span style="color:#66d9ef">if</span> (_people.Contains(person))
         {
             <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>;
         }
         
-        <span style="color:#ae81ff">_</span>people.Add(person);
+        _people.Add(person);
         <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">true</span>;
     }
 
     <span style="color:#66d9ef">public</span> Person GetPerson(Guid id)
     {
-        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">_</span>people.FirstOrDefault(p =&gt; p.Id.Equals(id));
+        <span style="color:#66d9ef">return</span> _people.FirstOrDefault(p =&gt; p.Id.Equals(id));
     }
 
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">bool</span> RemovePerson(Person person)
     {
-        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">_</span>people.Remove(person);
+        <span style="color:#66d9ef">return</span> _people.Remove(person);
     }
 }
 </code></pre></div><p>The API model to create a new person is as follows (this is the data a user will POST to the API).  When we create a new person, the caller should not need to specify an Id.  We rely on the server to generate it and tell us what it is.  This is one reason why we have different models for the API, domain and even storage layers.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoAPI;
 
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PersonRequest</span>
 {
@@ -156,7 +156,7 @@ API Server This is the model to represent a person object, which will sit at the
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">string</span> EmailAddress { <span style="color:#66d9ef">get</span>; <span style="color:#66d9ef">set</span>; }
 }
 </code></pre></div><p>The API controller contains the actual HTTP endpoints.  We specify these as GET, POST, PUT and DELETE depending on the action that needs to be undertaken.  Within each method, we call the appropriate method on our interface.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> Microsoft.AspNetCore.Mvc;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> Microsoft.AspNetCore.Mvc;
 
 <span style="color:#66d9ef">namespace</span> DemoAPI.Controllers;
 <span style="color:#a6e22e">
@@ -164,24 +164,24 @@ API Server This is the model to represent a person object, which will sit at the
 <span style="color:#a6e22e">[Route(&#34;people&#34;)]</span>
 <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PeopleController</span> : ControllerBase
 {
-    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> IPersonService <span style="color:#ae81ff">_</span>personService;
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> IPersonService _personService;
 
     <span style="color:#66d9ef">public</span> PeopleController(IPersonService personService)
     {
-        <span style="color:#ae81ff">_</span>personService = personService;
+        _personService = personService;
     }
 <span style="color:#a6e22e">
 </span><span style="color:#a6e22e">    [HttpGet (Name = &#34;GetAllPeople&#34;)]</span>
     <span style="color:#66d9ef">public</span> ActionResult&lt;IEnumerable&lt;Person&gt;&gt; GetPeople()
     {
-        <span style="color:#66d9ef">var</span> people = <span style="color:#ae81ff">_</span>personService.GetPeople();
+        <span style="color:#66d9ef">var</span> people = _personService.GetPeople();
         <span style="color:#66d9ef">return</span> Ok(people);
     }
 <span style="color:#a6e22e">
 </span><span style="color:#a6e22e">    [HttpGet(&#34;{id:guid}&#34;, Name = &#34;GetPersonById&#34;)]</span>
     <span style="color:#66d9ef">public</span> ActionResult&lt;Person&gt; GetPerson(Guid id)
     {
-        <span style="color:#66d9ef">var</span> person = <span style="color:#ae81ff">_</span>personService.GetPerson(id);
+        <span style="color:#66d9ef">var</span> person = _personService.GetPerson(id);
 
         <span style="color:#66d9ef">if</span> (person <span style="color:#66d9ef">is</span> <span style="color:#66d9ef">null</span>)
         {
@@ -201,7 +201,7 @@ API Server This is the model to represent a person object, which will sit at the
             EmailAddress = request.EmailAddress
         };
         
-        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.AddPerson(person))
+        <span style="color:#66d9ef">if</span> (_personService.AddPerson(person))
         {
             <span style="color:#66d9ef">var</span> path = <span style="color:#e6db74">$&#34;{Request.Scheme}://{Request.Host}{Request.Path.ToUriComponent()}/{person.Id}&#34;</span>;
             <span style="color:#66d9ef">return</span> Created(path, person);
@@ -213,7 +213,7 @@ API Server This is the model to represent a person object, which will sit at the
 </span><span style="color:#a6e22e">    [HttpPut(&#34;{id:guid}&#34;, Name = &#34;UpdatePersonById&#34;)]</span>
     <span style="color:#66d9ef">public</span> IActionResult UpdatePerson(Guid id, [FromBody] PersonRequest request)
     {
-        <span style="color:#66d9ef">var</span> person = <span style="color:#ae81ff">_</span>personService.GetPerson(id);
+        <span style="color:#66d9ef">var</span> person = _personService.GetPerson(id);
 
         <span style="color:#66d9ef">if</span> (person <span style="color:#66d9ef">is</span> <span style="color:#66d9ef">null</span>)
         {
@@ -224,9 +224,9 @@ API Server This is the model to represent a person object, which will sit at the
         person.LastName = request.LastName;
         person.EmailAddress = request.EmailAddress;
 
-        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.RemovePerson(person))
+        <span style="color:#66d9ef">if</span> (_personService.RemovePerson(person))
         {
-            <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.AddPerson(person))
+            <span style="color:#66d9ef">if</span> (_personService.AddPerson(person))
             {
                 <span style="color:#66d9ef">return</span> NoContent();
             }    
@@ -238,14 +238,14 @@ API Server This is the model to represent a person object, which will sit at the
 </span><span style="color:#a6e22e">    [HttpDelete(&#34;{id:guid}&#34;, Name = &#34;DeletePersonById&#34;)]</span>
     <span style="color:#66d9ef">public</span> IActionResult DeletePerson(Guid id)
     {
-        <span style="color:#66d9ef">var</span> person = <span style="color:#ae81ff">_</span>personService.GetPerson(id);
+        <span style="color:#66d9ef">var</span> person = _personService.GetPerson(id);
 
         <span style="color:#66d9ef">if</span> (person <span style="color:#66d9ef">is</span> <span style="color:#66d9ef">null</span>)
         {
             <span style="color:#66d9ef">return</span> NotFound();
         }
 
-        <span style="color:#66d9ef">if</span> (<span style="color:#ae81ff">_</span>personService.RemovePerson(person))
+        <span style="color:#66d9ef">if</span> (_personService.RemovePerson(person))
         {
             <span style="color:#66d9ef">return</span> NoContent();
         }
@@ -261,20 +261,20 @@ API Server This is the model to represent a person object, which will sit at the
 <p>Furthermore, if we expand the POST endpoint, it knows that we provide a <code>PersonRequest</code> object in the request body and that it returns a <code>Person</code> object.</p>
 <p><img src="/images/openapi-client/swagger-post.png" alt="" title="Swagger POST"></p>
 <p>We can test the API in Swagger by creating a person:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
   <span style="color:#f92672">&#34;firstName&#34;</span>: <span style="color:#e6db74">&#34;Robin&#34;</span>,
   <span style="color:#f92672">&#34;lastName&#34;</span>: <span style="color:#e6db74">&#34;Hood&#34;</span>,
   <span style="color:#f92672">&#34;emailAddress&#34;</span>: <span style="color:#e6db74">&#34;rhood@sherwood.forest&#34;</span>
 }
 </code></pre></div><p>The response we get is:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
   <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;5d4764ec-8859-46bf-a29d-f2717e4cc077&#34;</span>,
   <span style="color:#f92672">&#34;firstName&#34;</span>: <span style="color:#e6db74">&#34;Robin&#34;</span>,
   <span style="color:#f92672">&#34;lastName&#34;</span>: <span style="color:#e6db74">&#34;Hood&#34;</span>,
   <span style="color:#f92672">&#34;emailAddress&#34;</span>: <span style="color:#e6db74">&#34;rhood@sherwood.forest&#34;</span>
 }
 </code></pre></div><p>As well as the <code>Person</code> object, the response header contains a <code>Location</code>:  <code>location: https://localhost:7014/people/5d4764ec-8859-46bf-a29d-f2717e4cc077</code>.  We can GET this URL to get the same person back again.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ curl -k -s https://localhost:7014/people/5d4764ec-8859-46bf-a29d-f2717e4cc077 | jq
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">$ curl -k -s https://localhost:7014/people/5d4764ec-8859-46bf-a29d-f2717e4cc077 | jq
 {
   &#34;id&#34;: &#34;5d4764ec-8859-46bf-a29d-f2717e4cc077&#34;,
   &#34;firstName&#34;: &#34;Robin&#34;,
@@ -288,7 +288,7 @@ API Server This is the model to represent a person object, which will sit at the
 <p><img src="/images/openapi-client/service-reference.png" alt="" title="Add Service Reference"></p>
 <p>When you click Finish, VS will install the necessary NuGet packages and auto-generate the necessary C# code.  It will save to <code>obj\swaggerClient.cs</code>.</p>
 <p>Contruct the <code>DemoApi</code> client by providing the base address of the API and a new <code>HttpClient</code>.  Then it&rsquo;s simply a case of calling the methods you want.  In this example, I create a new person and print the output to the console.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoClient;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> DemoClient;
 
 <span style="color:#66d9ef">internal</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
 {
@@ -315,7 +315,7 @@ API Server This is the model to represent a person object, which will sit at the
         Console.WriteLine(<span style="color:#e6db74">$&#34;Email: {person.EmailAddress}&#34;</span>);
     }
 }
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Id: 24d745ef-0af6-4e47-9fbc-9a8908a8ca40
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Id: 24d745ef-0af6-4e47-9fbc-9a8908a8ca40
 First Name: Maid
 Last Name: Marian
 Email: mmarian@sherwood.forest

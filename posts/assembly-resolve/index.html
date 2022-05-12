@@ -3,7 +3,7 @@
   <head>
     <title>AppDomain.AssemblyResolve - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.82.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
 For a decent background, I encourage readers to review Jean&rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/assembly-resolve/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2020-12-21T12:06:54+00:00" />
-<meta property="article:modified_time" content="2020-12-21T12:06:54+00:00" />
+<meta property="article:published_time" content="2020-12-21T12:06:54&#43;00:00" />
+<meta property="article:modified_time" content="2020-12-21T12:06:54&#43;00:00" />
 
 
 
@@ -75,7 +75,7 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
 <p>The &ldquo;stage&rdquo; or &ldquo;implant&rdquo; is the main payload that contains all the functionality and logic we need to operate on a compromised machine.  At a minimum, this probably includes the ability to talk to a server, retrieve jobs, execute those jobs and send the results back.  One challenge with implants is that the more complex they become, the larger their filesize and the harder they become to deliver (e.g. during initial compromise).  Stagers are one solution to this problem - as they are tiny programs that can be delivered with the sole responsibility of pulling and loading the main stage.</p>
 <p>Let&rsquo;s write a very simpe stage and stager:</p>
 <h4 id="stage-net-class-library">Stage (.NET Class Library)</h4>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
 
 <span style="color:#66d9ef">namespace</span> Stage
 {
@@ -88,7 +88,7 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
     }
 }
 </code></pre></div><h4 id="stager-net-console-application">Stager (.NET Console Application)</h4>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
 <span style="color:#66d9ef">using</span> System.Net;
 <span style="color:#66d9ef">using</span> System.Reflection;
 
@@ -112,14 +112,14 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
     }
 }
 </code></pre></div><p>This works as expected - the stager downloads and executes the stage.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
 [+] Hello from Stager
 [+] Loading Stage...
 [+] Hello from Stage
 </code></pre></div><p>Now, one of the design decisions that were made regarding the SharpC2 implant was to make it extensible at runtime.  If the operator needed to push some new capability that was not &ldquo;native&rdquo; to the implant, then we wanted a means to provide that functionality.  To that end, we designed an interface on the implant that 3rd party modules could implement.</p>
 <h4 id="module-net-class-library">Module (.NET Class Library)</h4>
 <p>The exact implemention of the interface is not important - to demonstrate, we can use:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> Stage
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">namespace</span> Stage
 {
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> IAgentModule
     {
@@ -127,7 +127,7 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
     }
 }
 </code></pre></div><p>Then the module would look like this (note that it&rsquo;s a separate project in Visual Studio with a reference to the Stage project):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> Stage;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> Stage;
 <span style="color:#66d9ef">using</span> System;
 
 <span style="color:#66d9ef">namespace</span> Module
@@ -141,7 +141,7 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
     }
 }
 </code></pre></div><p>We shall now change the <code>Execute</code> method within the stage to:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Execute()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Execute()
 {
     Console.WriteLine(<span style="color:#e6db74">&#34;[+] Hello from Stage&#34;</span>);
     Console.WriteLine(<span style="color:#e6db74">&#34;[+] Loading Module...&#34;</span>);
@@ -165,7 +165,7 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
     }
 }
 </code></pre></div><p>However, if we run the stager, we get the following:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
 [+] Hello from Stager
 [+] Loading Stage...
 [+] Hello from Stage
@@ -173,17 +173,17 @@ For a decent background, I encourage readers to review Jean&rsquo;s post. Since 
 [-] Module does not implement IAgentModule
 </code></pre></div><h3 id="appdomainassemblyresolve">AppDomain.AssemblyResolve</h3>
 <p>It appears that the assembly is failing to locate <code>IAgentModule</code>, and this is finally where we get to the <code>AssemblyResolve</code> event.  If we place a breakpoint around <code>if (asm is IAgentModule)</code>, we can use the Immediate Window in Visual Studio to do some poking around.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Assembly.GetCallingAssembly().FullName
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Assembly.GetCallingAssembly().FullName
 &#34;Stager, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&#34;
 
 AppDomain.CurrentDomain.FriendlyName
 &#34;Stager.exe&#34;
 </code></pre></div><p>We can see that our current AppDomain is that of stager.exe and stager is the current calling assembly.  Since the <code>IAgentInterface</code> is part of the <strong>stage</strong>, this explains why the resolution is failing.  All we have to do is register the AssemblyResolve callback to get an instance of the stage assembly where resolution will succeed.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolveCallback;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolveCallback;
 </code></pre></div><p>And the method to handle this callback:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">static</span> Assembly AssemblyResolveCallback(<span style="color:#66d9ef">object</span> sender, ResolveEventArgs args) =&gt; Assembly.GetExecutingAssembly();
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">static</span> Assembly AssemblyResolveCallback(<span style="color:#66d9ef">object</span> sender, ResolveEventArgs args) =&gt; Assembly.GetExecutingAssembly();
 </code></pre></div><p>Even though stager is the calling assembly, stage is the executing assembly.  The stage in full is now:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
 <span style="color:#66d9ef">using</span> System.Net;
 <span style="color:#66d9ef">using</span> System.Reflection;
 
@@ -221,7 +221,7 @@ AppDomain.CurrentDomain.FriendlyName
     }
 }
 </code></pre></div><p>And now we get:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\&gt;Stager.exe
 [+] Hello from Stager
 [+] Loading Stage...
 [+] Hello from Stage

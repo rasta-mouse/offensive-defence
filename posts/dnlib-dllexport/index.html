@@ -3,7 +3,7 @@
   <head>
     <title>Adding DLL Exports with dnlib - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.82.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -22,8 +22,8 @@ I&rsquo;m in the process of porting the SharpC2 payload generation capabilities 
 Starting from a ." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/dnlib-dllexport/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2020-12-29T10:38:26+00:00" />
-<meta property="article:modified_time" content="2020-12-29T10:38:26+00:00" />
+<meta property="article:published_time" content="2020-12-29T10:38:26&#43;00:00" />
+<meta property="article:modified_time" content="2020-12-29T10:38:26&#43;00:00" />
 
 
 
@@ -75,7 +75,7 @@ Starting from a ." />
 <h3 id="starting-from-a-net-template">Starting from a .NET &ldquo;template&rdquo;</h3>
 <p>Using dnlib to create an entire payload stager from nothing, whilst possible, is just a bit much for any sane individual.  It&rsquo;s far easier to start with a compiled assembly as a template and just make the desired modifications before outputting a new assembly.</p>
 <p>For this example, we&rsquo;ll start with the following compiled to an <code>AnyCPU</code> .NET Class Library.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System.Windows.Forms;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System.Windows.Forms;
 
 <span style="color:#66d9ef">namespace</span> DemoDLL
 {
@@ -92,18 +92,18 @@ Starting from a ." />
 <h3 id="dnlib-consoleapp">dnlib &ldquo;ConsoleApp&rdquo;</h3>
 <p>We can now create a console application that will load and modify this DLL (in the case of SharpC2, the Team Server uses dnlib to modify the stager template on request).  dnlib has a convenient <a href="https://www.nuget.org/packages/dnlib/">Nuget package</a> that we can install.</p>
 <p>First we create a module definition for the assembly by calling <code>ModuleDefMD.Load()</code>, which will contain every single little piece of information about the assembly.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> module = ModuleDefMD.Load(<span style="color:#e6db74">@&#34;C:\Temp\DemoDLL.dll&#34;</span>);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> module = ModuleDefMD.Load(<span style="color:#e6db74">@&#34;C:\Temp\DemoDLL.dll&#34;</span>);
 </code></pre></div><p>Then we want to find a reference to the <code>Execute</code> method, as this is the method we want to expose via the export.  I typically do this by using Linq to find the type (or class) first, which is just <code>Demo</code>, within which we&rsquo;ll find the method.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> type = module.GetTypes().FirstOrDefault(t =&gt; t.Name == <span style="color:#e6db74">&#34;Demo&#34;</span>);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> type = module.GetTypes().FirstOrDefault(t =&gt; t.Name == <span style="color:#e6db74">&#34;Demo&#34;</span>);
 <span style="color:#66d9ef">var</span> method = type.Methods.FirstOrDefault(m =&gt; m.Name == <span style="color:#e6db74">&#34;Execute&#34;</span>);
 </code></pre></div><p>Each method has <code>ExportInfo</code> (<code>MethodExportInfo</code>) and <code>IsUnmanagedExport</code> (<code>bool</code>) properties.  As expected, <code>ExportInfo</code> is currently <code>null</code> and <code>IsUnmanagedExport</code> is <code>false</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">method.ExportInfo
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">method.ExportInfo
 null
 
 method.IsUnmanagedExport
 false
 </code></pre></div><p>We can change that by simply instantiating a new instance of <code>MethodExportInfo</code> and setting <code>IsUnmanagedExport</code> to <code>true</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">method.ExportInfo = <span style="color:#66d9ef">new</span> MethodExportInfo();
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">method.ExportInfo = <span style="color:#66d9ef">new</span> MethodExportInfo();
 method.IsUnmanagedExport = <span style="color:#66d9ef">true</span>;
 </code></pre></div><p>Next, we modify the <code>PEHeadersOptions</code> and <code>Cor20HeaderOptions</code> to:</p>
 <ol>
@@ -111,21 +111,21 @@ method.IsUnmanagedExport = <span style="color:#66d9ef">true</span>;
 <li>Remove the <code>ILOnly</code> flag.</li>
 </ol>
 <p>This can be done using <code>ModuleWriterOptions</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> opts = <span style="color:#66d9ef">new</span> ModuleWriterOptions(module);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> opts = <span style="color:#66d9ef">new</span> ModuleWriterOptions(module);
 opts.PEHeadersOptions.Machine = dnlib.PE.Machine.AMD64;
 opts.Cor20HeaderOptions.Flags = <span style="color:#ae81ff">0</span>;
 </code></pre></div><p>In my case, the only flag that was set in the <code>Cor20HeaderOptions</code> was <code>ILOnly</code>, so I cleared it by setting the flags to <code>0</code>.</p>
 <p>Finally, we can write the module to a new DLL file.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">module.Write(<span style="color:#e6db74">@&#34;C:\Temp\DemoDLLExported.dll&#34;</span>, opts);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">module.Write(<span style="color:#e6db74">@&#34;C:\Temp\DemoDLLExported.dll&#34;</span>, opts);
 </code></pre></div><p>Now rundll32 will be able to execute this method.</p>
 <p><img src="/images/dnlib-dllexport/success.png" alt="" title="MsgBox"></p>
 <h3 id="export-name">Export Name</h3>
 <p>By default, <code>MethodExportInfo</code> will use the method name as the export name, but it has a few optional overloads that can change that behaviour.  For instance, it can take a string or ordinal.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">method.ExportInfo = <span style="color:#66d9ef">new</span> MethodExportInfo(<span style="color:#e6db74">&#34;SomethingRandom&#34;</span>);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">method.ExportInfo = <span style="color:#66d9ef">new</span> MethodExportInfo(<span style="color:#e6db74">&#34;SomethingRandom&#34;</span>);
 </code></pre></div><p><img src="/images/dnlib-dllexport/somethingrandom.png" alt="" title="SomethingRandom"></p>
 <p>I think this would make for an interesting user-supplied parameter when generating this style of payload.</p>
 <h3 id="final-code">Final Code</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> dnlib.DotNet;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> dnlib.DotNet;
 <span style="color:#66d9ef">using</span> dnlib.DotNet.Writer;
 
 <span style="color:#66d9ef">using</span> System.Linq;

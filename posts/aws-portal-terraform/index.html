@@ -3,7 +3,7 @@
   <head>
     <title>AWS Status Portal, Terraform &amp; Ansible - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.82.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -22,8 +22,8 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
 Heath Adams posted a question to Twitter about building a CMS that could use AWS and Terraform to manage lab deployments." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/aws-portal-terraform/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-07-13T13:43:11+01:00" />
-<meta property="article:modified_time" content="2021-07-13T13:43:11+01:00" />
+<meta property="article:published_time" content="2021-07-13T13:43:11&#43;01:00" />
+<meta property="article:modified_time" content="2021-07-13T13:43:11&#43;01:00" />
 
 
 
@@ -82,7 +82,7 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
 <p>If you read my Terraform + Ansible post, you&rsquo;ll see that I used Terraform&rsquo;s <code>local-exec</code> provisioner to execute <code>ansible-playbook</code> against the newly provisioned VMs.  However, (as far as I can tell) the containers used by Terraform Cloud don&rsquo;t have this available, so I needed a different method of triggering Ansible after the VMs have been deployed.</p>
 <p>The solution I came up with was to deploy a dedicated Ansible control node in AWS.  The idea being that this would run constantly and wait to be triggered when a new lab is deployed.  I also found that Ansible has several plugins for dynamic inventory, including one for AWS which allows it to query your account and get back a list of EC2 instances.</p>
 <p>Ultimately, this allowed me to execute playbooks against instances that have particular tags.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">- <span style="color:#f92672">become</span>: <span style="color:#66d9ef">no</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">- <span style="color:#f92672">become</span>: <span style="color:#66d9ef">no</span>
   <span style="color:#f92672">hosts</span>: <span style="color:#ae81ff">tag_Name_Kali</span>
   <span style="color:#f92672">name</span>: <span style="color:#ae81ff">kali-setup</span>
   <span style="color:#f92672">tasks</span>:
@@ -91,15 +91,15 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
         <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/home/kali/.hushlogin</span>
         <span style="color:#f92672">state</span>: <span style="color:#ae81ff">touch</span>
         <span style="color:#f92672">mode</span>: <span style="color:#ae81ff">u=rw,g=r,o=r</span>
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ansible-playbook -u kali --private-key deployment.pem playbooks/kali-setup.yaml
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ansible-playbook -u kali --private-key deployment.pem playbooks/kali-setup.yaml
 </code></pre></div><br/>
 <p>Furthermore, you can check that the host is available and ready before trying to execute the playbook with something like:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ansible tag_Name_Kali -m ping -u kali --private-key deployment.pem
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ansible tag_Name_Kali -m ping -u kali --private-key deployment.pem
 </code></pre></div><br/>
 <p>To interact with Ansible from my web portal, I was very lazy and just used an SSH client library.  I admittedly don&rsquo;t know Ansible that well, so I&rsquo;m sure there&rsquo;s a better way.</p>
 <h2 id="portal">Portal</h2>
 <p>I created a new interface for Terraform to dependency inject in my page.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> ITerraform
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> ITerraform
 {
     Task&lt;Attributes&gt; GetWorkspaceAttributes(<span style="color:#66d9ef">string</span> workspaceId);
     Task DeployLab(<span style="color:#66d9ef">string</span> workspaceId);
@@ -107,21 +107,21 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
 }
 </code></pre></div><br/>
 <p>The implementation is not that complicated thanks to the <code>TfeClient</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Terraform</span> : ITerraform
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Terraform</span> : ITerraform
 {
-    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> TfeClient <span style="color:#ae81ff">_</span>tfeClient;
+    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">readonly</span> TfeClient _tfeClient;
 
     <span style="color:#66d9ef">public</span> Terraform(<span style="color:#66d9ef">string</span> bearer)
     {
         <span style="color:#66d9ef">var</span> client = <span style="color:#66d9ef">new</span> HttpClient();
         <span style="color:#66d9ef">var</span> config = <span style="color:#66d9ef">new</span> TfeConfig(bearer, client);
             
-        <span style="color:#ae81ff">_</span>tfeClient = <span style="color:#66d9ef">new</span> TfeClient(config);
+        _tfeClient = <span style="color:#66d9ef">new</span> TfeClient(config);
     }
 
     <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">async</span> Task&lt;Attributes&gt; GetWorkspaceAttributes(<span style="color:#66d9ef">string</span> id)
     {
-        <span style="color:#66d9ef">var</span> response = <span style="color:#66d9ef">await</span> <span style="color:#ae81ff">_</span>tfeClient.Workspace.ShowAsync(id);
+        <span style="color:#66d9ef">var</span> response = <span style="color:#66d9ef">await</span> _tfeClient.Workspace.ShowAsync(id);
         <span style="color:#66d9ef">return</span> response.Data.Attributes;
     }
 
@@ -132,7 +132,7 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
         request.Data.Relationships.Workspace.Data.Id = id;
         request.Data.Relationships.Workspace.Data.Type = <span style="color:#e6db74">&#34;workspaces&#34;</span>;
 
-        <span style="color:#66d9ef">var</span> response = <span style="color:#66d9ef">await</span> <span style="color:#ae81ff">_</span>tfeClient.Run.CreateAsync(request);
+        <span style="color:#66d9ef">var</span> response = <span style="color:#66d9ef">await</span> _tfeClient.Run.CreateAsync(request);
         <span style="color:#66d9ef">await</span> ApplyRun(response.Data.Id);
     }
 
@@ -144,7 +144,7 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
         request.Data.Relationships.Workspace.Data.Id = id;
         request.Data.Relationships.Workspace.Data.Type = <span style="color:#e6db74">&#34;workspaces&#34;</span>;
 
-        <span style="color:#66d9ef">var</span> response = <span style="color:#66d9ef">await</span> <span style="color:#ae81ff">_</span>tfeClient.Run.CreateAsync(request);
+        <span style="color:#66d9ef">var</span> response = <span style="color:#66d9ef">await</span> _tfeClient.Run.CreateAsync(request);
         <span style="color:#66d9ef">await</span> ApplyRun(response.Data.Id);
     }
 
@@ -155,17 +155,17 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
         <span style="color:#66d9ef">while</span> (!ready)
         {
             <span style="color:#66d9ef">await</span> Task.Delay(<span style="color:#ae81ff">1000</span>);
-            <span style="color:#66d9ef">var</span> run = <span style="color:#66d9ef">await</span> <span style="color:#ae81ff">_</span>tfeClient.Run.ShowAsync(id);
+            <span style="color:#66d9ef">var</span> run = <span style="color:#66d9ef">await</span> _tfeClient.Run.ShowAsync(id);
             ready = run.Data.Attributes.Status.Equals(<span style="color:#e6db74">&#34;planned&#34;</span>, StringComparison.OrdinalIgnoreCase);
         }
 
-        <span style="color:#66d9ef">await</span> <span style="color:#ae81ff">_</span>tfeClient.Run.ApplyAsync(id, <span style="color:#66d9ef">null</span>);
+        <span style="color:#66d9ef">await</span> _tfeClient.Run.ApplyAsync(id, <span style="color:#66d9ef">null</span>);
     }
 }
 </code></pre></div><br/>
 <p>On my main web page, I can then call <code>await _terraform.GetWorkspaceAttributes(_labId);</code> in the <code>OnInitializedAsync()</code> method and populate my HTML with the values.  I also hardcoded the lab ID on the page, because PoC, although you can list all of your workspaces and just iterate through each one.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">&lt;div class=<span style="color:#e6db74">&#34;card&#34;</span> style=<span style="color:#e6db74">&#34;margin: 20px; width: 450px&#34;</span>&gt;
-	@if (<span style="color:#ae81ff">_l</span>abAttributes <span style="color:#66d9ef">is</span> not <span style="color:#66d9ef">null</span>)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">&lt;div class=<span style="color:#e6db74">&#34;card&#34;</span> style=<span style="color:#e6db74">&#34;margin: 20px; width: 450px&#34;</span>&gt;
+	@if (_labAttributes <span style="color:#66d9ef">is</span> not <span style="color:#66d9ef">null</span>)
 	{
     	&lt;div class=<span style="color:#e6db74">&#34;card-header&#34;</span>&gt;@_labAttributes.Name&lt;/div&gt;
 	    &lt;div class=<span style="color:#e6db74">&#34;card-body&#34;</span>&gt;
@@ -179,29 +179,29 @@ Heath Adams posted a question to Twitter about building a CMS that could use AWS
 &lt;/div&gt;
 </code></pre></div><br/>
 <p>Wiring the buttons up is easy with the interface.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">async</span> Task DeployLab()
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">async</span> Task DeployLab()
 {
-    <span style="color:#ae81ff">_d</span>eployDisabled = <span style="color:#66d9ef">true</span>;
-    <span style="color:#66d9ef">await</span> <span style="color:#ae81ff">_</span>terraform.DeployLab(<span style="color:#ae81ff">_l</span>abId);
+    _deployDisabled = <span style="color:#66d9ef">true</span>;
+    <span style="color:#66d9ef">await</span> _terraform.DeployLab(_labId);
 }
 
 <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">async</span> Task DestroyLab()
 {
-    <span style="color:#ae81ff">_d</span>estroyDisabled = <span style="color:#66d9ef">true</span>;
-    <span style="color:#66d9ef">await</span> <span style="color:#ae81ff">_</span>terraform.DestroyLab(<span style="color:#ae81ff">_l</span>abId);
+    _destroyDisabled = <span style="color:#66d9ef">true</span>;
+    <span style="color:#66d9ef">await</span> _terraform.DestroyLab(_labId);
 }
 </code></pre></div><br/>
 <p>I also made some improvements to the UI by putting disable checks on the buttons.  Here are two example for starting and stopping instances.  An instance can only be started if it&rsquo;s in a &ldquo;stopped&rdquo; state, and can only be stopped if it&rsquo;s in a &ldquo;started&rdquo; state.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> CanStopInstance(<span style="color:#66d9ef">string</span> instanceId)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> CanStopInstance(<span style="color:#66d9ef">string</span> instanceId)
 {
-    <span style="color:#66d9ef">var</span> instance = <span style="color:#ae81ff">_</span>instances.FirstOrDefault(i =&gt; i.InstanceId.Equals(instanceId));
+    <span style="color:#66d9ef">var</span> instance = _instances.FirstOrDefault(i =&gt; i.InstanceId.Equals(instanceId));
     <span style="color:#66d9ef">var</span> condition = instance?.State.Name == InstanceStateName.Running;
     <span style="color:#66d9ef">return</span> !condition;
 }
     
 <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">bool</span> CanStartInstance(<span style="color:#66d9ef">string</span> instanceId)
 {
-    <span style="color:#66d9ef">var</span> instance = <span style="color:#ae81ff">_</span>instances.FirstOrDefault(i =&gt; i.InstanceId.Equals(instanceId));
+    <span style="color:#66d9ef">var</span> instance = _instances.FirstOrDefault(i =&gt; i.InstanceId.Equals(instanceId));
     <span style="color:#66d9ef">var</span> condition = instance?.State.Name == InstanceStateName.Stopped;
     <span style="color:#66d9ef">return</span> !condition;
 }

@@ -5,7 +5,18 @@
     <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
     <description>Recent content in Rasta Mouse on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Fri, 18 Feb 2022 20:14:12 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 12 May 2022 17:26:06 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>PPID Spoofing &amp; BlockDLLs with NtCreateUserProcess</title>
+      <link>https://offensivedefence.co.uk/posts/ntcreateuserprocess/</link>
+      <pubDate>Thu, 12 May 2022 17:26:06 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/ntcreateuserprocess/</guid>
+      <description>This week, Capt. Meelo released a great blog post on how to call the NtCreateUserProcess API as a substitue for the typical Win32 CreateProcess API. This post will build upon Meelo&amp;rsquo;s, so I highly encourage you to read it first.
+TL;DR, this code (not counting ntdll.h) is the bare minimum to spawn mmc.exe:
+#include &amp;lt;Windows.h&amp;gt;#include &amp;#34;ntdll.h&amp;#34;#pragma comment(lib, &amp;#34;ntdll&amp;#34;)  int main() { UNICODE_STRING NtImagePath; RtlInitUnicodeString(&amp;amp;NtImagePath, (PWSTR)L&amp;#34;\\??\\C:\\Windows\\System32\\mmc.exe&amp;#34;); PRTL_USER_PROCESS_PARAMETERS ProcessParameters = NULL; RtlCreateProcessParametersEx(&amp;amp;ProcessParameters, &amp;amp;NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED); PS_CREATE_INFO CreateInfo = { 0 }; CreateInfo.</description>
+    </item>
+    
     <item>
       <title>Building an API Client from Swagger</title>
       <link>https://offensivedefence.co.uk/posts/openapi-client-swagger/</link>

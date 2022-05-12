@@ -3,7 +3,7 @@
   <head>
     <title>C# Process Class Primer - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.92.2" />
+    <meta name="generator" content="Hugo 0.82.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -22,8 +22,8 @@ Enumerating Processes The Process class has 4 methods for enumerating processes 
  GetCurrentProcess GetProcessesByName GetProcessById GetProcesses  Process.GetProcesses() will return a Process[] of every process running on the local system." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/csharp-process-class/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-09-22T10:11:26+01:00" />
-<meta property="article:modified_time" content="2021-09-22T10:11:26+01:00" />
+<meta property="article:published_time" content="2021-09-22T10:11:26&#43;01:00" />
+<meta property="article:modified_time" content="2021-09-22T10:11:26&#43;01:00" />
 
 
 
@@ -75,7 +75,7 @@ This class is part of the <a href="https://docs.microsoft.com/en-us/dotnet/api/s
 <li>GetProcesses</li>
 </ul>
 <p><code>Process.GetProcesses()</code> will return a <code>Process[]</code> of every process running on the local system.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System.Diagnostics;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System.Diagnostics;
 
 <span style="color:#66d9ef">namespace</span> ConsoleApp1
 {
@@ -89,42 +89,42 @@ This class is part of the <a href="https://docs.microsoft.com/en-us/dotnet/api/s
 }
 </code></pre></div><p>Each instance of a <code>Process</code> has properties and methods that can be accessed, such as <code>ProcessName</code>, <code>Id</code> and <code>Kill()</code>.  Your ability to read/call these depends on your privilege and the privilege of the process in question (e.g. you can&rsquo;t just go around killing processes you don&rsquo;t own).</p>
 <p>Since this is just an array, iterate over each one and print some information.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> processes = Process.GetProcesses();
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> processes = Process.GetProcesses();
 
 <span style="color:#66d9ef">foreach</span> (<span style="color:#66d9ef">var</span> process <span style="color:#66d9ef">in</span> processes)
 {
     Console.WriteLine(<span style="color:#e6db74">&#34;{0} : {1}&#34;</span>, process.ProcessName, process.Id);
 }
 </code></pre></div><p>This will produce very simple output:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Idle : 0
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Idle : 0
 System : 4
 Secure System : 104
 Registry : 180
 </code></pre></div><p>You can also enumerate the DLLs loaded into a process.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> process = Process.GetCurrentProcess();
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> process = Process.GetCurrentProcess();
 
 <span style="color:#66d9ef">foreach</span> (ProcessModule module <span style="color:#66d9ef">in</span> process.Modules)
 {
     Console.WriteLine(<span style="color:#e6db74">&#34;{0} : 0x{1:X}&#34;</span>, module.ModuleName, module.BaseAddress.ToInt64());
 }
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">ConsoleApp1.exe : 0x7FF7BB6E0000
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">ConsoleApp1.exe : 0x7FF7BB6E0000
 ntdll.dll : 0x7FFECDD30000
 KERNEL32.DLL : 0x7FFECC780000
 KERNELBASE.dll : 0x7FFECB710000
 USER32.dll : 0x7FFECBF00000
 </code></pre></div><h3 id="starting-processes">Starting Processes</h3>
 <p>The absolute easiest way to start a process is by using <code>Process.Start()</code> and passing in the <code>fileName</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">&#34;notepad&#34;</span>);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">&#34;notepad&#34;</span>);
 </code></pre></div><p>You may also pass in arguments as a <code>string</code> or an <code>IEnumerable&lt;string&gt;</code>. Some examples:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">&#34;notepad&#34;</span>, <span style="color:#e6db74">@&#34;C:\Temp\test.txt&#34;</span>);
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">&#34;cmd&#34;</span>, <span style="color:#e6db74">@&#34;/c calc&#34;</span>);
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">@&#34;C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe&#34;</span>, <span style="color:#66d9ef">new</span>[] { <span style="color:#e6db74">&#34;klist&#34;</span> });
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">&#34;notepad&#34;</span>, <span style="color:#e6db74">@&#34;C:\Temp\test.txt&#34;</span>);
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">&#34;cmd&#34;</span>, <span style="color:#e6db74">@&#34;/c calc&#34;</span>);
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">Process.Start(<span style="color:#e6db74">@&#34;C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe&#34;</span>, <span style="color:#66d9ef">new</span>[] { <span style="color:#e6db74">&#34;klist&#34;</span> });
 </code></pre></div><p>This method actually returns a new instance of a <code>Process</code>, which can be used to access properties/methods for that process instance (as shown above).</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> process = Process.Start(<span style="color:#e6db74">&#34;notepad&#34;</span>);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> process = Process.Start(<span style="color:#e6db74">&#34;notepad&#34;</span>);
 Console.WriteLine(<span style="color:#e6db74">&#34;Started {0} ({1})&#34;</span>, process.ProcessName, process.Id);
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Started notepad (3640)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Started notepad (3640)
 </code></pre></div><p>More granular control can be gained by using the <code>ProcessStartInfo</code> class.  This allows you to start processes with hidden windows, redirect std in/out/err, and with alternate credentials.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
 {
     FileName = <span style="color:#e6db74">&#34;cmd&#34;</span>,
     CreateNoWindow = <span style="color:#66d9ef">true</span>,
@@ -133,7 +133,7 @@ Console.WriteLine(<span style="color:#e6db74">&#34;Started {0} ({1})&#34;</span>
 <span style="color:#66d9ef">var</span> process = Process.Start(info);
 Console.WriteLine(<span style="color:#e6db74">&#34;Started {0} ({1})&#34;</span>, process.ProcessName, process.Id);
 process.Kill();
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
 {
     FileName = <span style="color:#e6db74">&#34;cmd&#34;</span>,
     UserName = <span style="color:#e6db74">&#34;AltRasta&#34;</span>,
@@ -146,7 +146,7 @@ Console.WriteLine(<span style="color:#e6db74">&#34;Started {0} ({1})&#34;</span>
 process.Kill();
 </code></pre></div><h4 id="disposing">Disposing</h4>
 <p>An instance of a <code>Process</code> has many resources associated with it, including a native handle.  This can be used as part of a process injection workflow, since it&rsquo;s required to allocate and write memory etc.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
 {
     FileName = <span style="color:#e6db74">&#34;cmd&#34;</span>,
     CreateNoWindow = <span style="color:#66d9ef">true</span>,
@@ -155,19 +155,19 @@ process.Kill();
 <span style="color:#66d9ef">var</span> process = Process.Start(info);
 Console.WriteLine(<span style="color:#e6db74">&#34;Handle: 0x{0:X}&#34;</span>, process.Handle.ToInt64());
 process.Kill();
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Handle: 0x298
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Handle: 0x298
 </code></pre></div><p>For that reason, <code>Process</code> is disposable to allow these associated resources to be freed.  So we should be doing something like:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> var process = Process.Start(info);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> var process = Process.Start(info);
 process.Kill();
 </code></pre></div><p>or (depending on your style)</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> process = Process.Start(info);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> process = Process.Start(info);
 process.Kill();
 process.Dispose();
 </code></pre></div><p>It&rsquo;s worth noting that disposing of a <code>Process</code> instance does not kill the process - it simply releases the resources associated with us holding information about it.</p>
 <h4 id="capturing-output">Capturing Output</h4>
 <p>Reading from standard out and error are staples of how many &ldquo;shell&rdquo; and &ldquo;run&rdquo; capabilities work in offensive .NET tooling.  It allows you to spawn hidden processes and capture the output without it ever been seen by a user.</p>
 <p>As the current user:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
 {
     FileName = <span style="color:#e6db74">&#34;cmd&#34;</span>,
     Arguments = <span style="color:#e6db74">&#34;/c whoami&#34;</span>,
@@ -181,9 +181,9 @@ process.Dispose();
             
 <span style="color:#66d9ef">var</span> output = sr.ReadToEnd();
 Console.WriteLine(output);
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">ghost-canyon\daniel
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">ghost-canyon\daniel
 </code></pre></div><p>With alternate creds:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
 {
     FileName = <span style="color:#e6db74">&#34;cmd&#34;</span>,
     Arguments = <span style="color:#e6db74">&#34;/c whoami&#34;</span>,
@@ -200,9 +200,9 @@ Console.WriteLine(output);
             
 <span style="color:#66d9ef">var</span> output = sr.ReadToEnd();
 Console.WriteLine(output);
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">ghost-canyon\altrasta
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">ghost-canyon\altrasta
 </code></pre></div><p>Capturing standard out and error:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
 {
     FileName = <span style="color:#e6db74">&#34;cmd&#34;</span>,
     Arguments = <span style="color:#e6db74">&#34;/c not_a_valid_command&#34;</span>,
@@ -224,9 +224,9 @@ sb.Append(output);
 sb.Append(error);
 
 Console.WriteLine(sb.ToString());
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">&#39;not_a_valid_command&#39; is not recognized as an internal or external command, operable program or batch file.
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">&#39;not_a_valid_command&#39; is not recognized as an internal or external command, operable program or batch file.
 </code></pre></div><p>Calling an application without cmd:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">var</span> info = <span style="color:#66d9ef">new</span> ProcessStartInfo
 {
     FileName = <span style="color:#e6db74">&#34;PING&#34;</span>,
     Arguments = <span style="color:#e6db74">&#34;127.0.0.1 -n 3&#34;</span>,
@@ -240,7 +240,7 @@ Console.WriteLine(sb.ToString());
             
 <span style="color:#66d9ef">var</span> output = sr.ReadToEnd();
 Console.WriteLine(output);
-</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Pinging 127.0.0.1 with 32 bytes of data:
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Pinging 127.0.0.1 with 32 bytes of data:
 Reply from 127.0.0.1: bytes=32 time&lt;1ms TTL=128
 Reply from 127.0.0.1: bytes=32 time&lt;1ms TTL=128
 Reply from 127.0.0.1: bytes=32 time&lt;1ms TTL=128
