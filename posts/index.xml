@@ -5,7 +5,17 @@
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Thu, 12 May 2022 17:26:06 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 13 May 2022 10:38:32 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Updating Mimikatz in Covenant</title>
+      <link>https://offensivedefence.co.uk/posts/covenant-powerkatz/</link>
+      <pubDate>Fri, 13 May 2022 10:38:32 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/covenant-powerkatz/</guid>
+      <description>There&amp;rsquo;s an issue on Covenant&amp;rsquo;s GitHub asking how to update the bundled version of Mimikatz. This post will address that question and also outline how I went about finding the answer. I cloned the dev branch to look at this, because I really didn&amp;rsquo;t feel like installing .NET Core 3.1 which main is still using. Running a mimikatz command, I can see the build is from Feb 2021.
+Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more accurately, Powerkatz) built-in.</description>
+    </item>
+    
     <item>
       <title>PPID Spoofing &amp; BlockDLLs with NtCreateUserProcess</title>
       <link>https://offensivedefence.co.uk/posts/ntcreateuserprocess/</link>
