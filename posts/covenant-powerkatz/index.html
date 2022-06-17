@@ -3,7 +3,7 @@
   <head>
     <title>Updating Mimikatz in Covenant - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.101.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@ Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more ac
 Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more accurately, Powerkatz) built-in." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/covenant-powerkatz/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2022-05-13T10:38:32&#43;01:00" />
-<meta property="article:modified_time" content="2022-05-13T10:38:32&#43;01:00" />
+<meta property="article:published_time" content="2022-05-13T10:38:32+01:00" />
+<meta property="article:modified_time" content="2022-05-13T10:38:32+01:00" />
 
 
 
@@ -65,7 +65,7 @@ Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more ac
       <p>There&rsquo;s an <a href="https://github.com/cobbr/Covenant/issues/358">issue</a> on Covenant&rsquo;s GitHub asking how to update the bundled version of Mimikatz.  This post will address that question and also outline how I went about finding the answer.  I cloned the dev branch to look at this, because I really didn&rsquo;t feel like installing .NET Core 3.1 which main is still using.  Running a mimikatz command, I can see the build is from Feb 2021.</p>
 <p><img src="/images/covenant-powerkatz/katz-2021.png" alt="" title="Mimikatz Feb 2021"></p>
 <p>Covenant uses <a href="https://github.com/cobbr/SharpSploit">SharpSploit</a> as a dependancy, which itself has Mimikatz (or more accurately, Powerkatz) built-in.  You can find the different builds of Powerkatz inside the <code>ReferenceSourceLibraries\SharpSploit</code> directory.</p>
-<pre><code>PS C:\Tools\Covenant\Covenant\Data\ReferenceSourceLibraries\SharpSploit\SharpSploit\Resources&gt; ls
+<pre tabindex="0"><code>PS C:\Tools\Covenant\Covenant\Data\ReferenceSourceLibraries\SharpSploit\SharpSploit\Resources&gt; ls
 
     Directory: C:\Tools\Covenant\Covenant\Data\ReferenceSourceLibraries\SharpSploit\SharpSploit\Resources
 
@@ -78,12 +78,12 @@ Mode                 LastWriteTime         Length Name
 </code></pre><p>My assumption was just to replace these files with updated builds from the Mimikatz repo, and hey-presto. However, UserXGnu stated that that does not actually work.  I tried this myself, and sure enough, Covenant wasn&rsquo;t using them.</p>
 <p>The next place I looked was the task definitions for the various Mimikatz commands, such as LogonPasswords.  These can be found at <a href="https://github.com/cobbr/Covenant/blob/master/Covenant/Data/Tasks/SharpSploit.Credentials.yaml">https://github.com/cobbr/Covenant/blob/master/Covenant/Data/Tasks/SharpSploit.Credentials.yaml</a>.  Task definitions in Covenant are quite large, but in this case, we&rsquo;re looking for references (no pun intended) to where they&rsquo;re pulling external resources.</p>
 <p>I found these enteries, which show x86 and x64 builds being pulled from a different location on disk.</p>
-<pre><code>EmbeddedResources:
+<pre tabindex="0"><code>EmbeddedResources:
   - Name: SharpSploit.Resources.powerkatz_x86.dll
     Location: SharpSploit.Resources.powerkatz_x86.dll
   - Name: SharpSploit.Resources.powerkatz_x64.dll
     Location: SharpSploit.Resources.powerkatz_x64.dll
-</code></pre><pre><code>PS C:\Tools\Covenant\Covenant\Data\EmbeddedResources&gt; ls
+</code></pre><pre tabindex="0"><code>PS C:\Tools\Covenant\Covenant\Data\EmbeddedResources&gt; ls
 
     Directory: C:\Tools\Covenant\Covenant\Data\EmbeddedResources
 

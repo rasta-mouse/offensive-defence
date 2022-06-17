@@ -5,7 +5,17 @@
     <link>https://offensivedefence.co.uk/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Fri, 13 May 2022 10:38:32 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 17 Jun 2022 09:57:19 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>NTLM Authentication with Firefox &amp; FoxyProxy</title>
+      <link>https://offensivedefence.co.uk/posts/ntlm-auth-firefox/</link>
+      <pubDate>Fri, 17 Jun 2022 09:57:19 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/ntlm-auth-firefox/</guid>
+      <description>It&amp;rsquo;s common for organisations to host internal web applications that are configured for single sign-on, backed by Active Directory. Even though Kerberos is becoming more common, NTLM is still more ubiquitous (especially for legacy apps). This short post will demonstate how to authenticate to a web app over a SOCKS proxy, using NTLM.
+I&amp;rsquo;m running the default IIS web page on a Windows Server. Under the Authentication settings, I&amp;rsquo;ve disabled Anonymous Auth and only enabled the NTLM provider under Windows Auth.</description>
+    </item>
+    
     <item>
       <title>Updating Mimikatz in Covenant</title>
       <link>https://offensivedefence.co.uk/posts/covenant-powerkatz/</link>
@@ -24,7 +34,7 @@ Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more ac
       <guid>https://offensivedefence.co.uk/posts/ntcreateuserprocess/</guid>
       <description>This week, Capt. Meelo released a great blog post on how to call the NtCreateUserProcess API as a substitue for the typical Win32 CreateProcess API. This post will build upon Meelo&amp;rsquo;s, so I highly encourage you to read it first.
 TL;DR, this code (not counting ntdll.h) is the bare minimum to spawn mmc.exe:
-#include &amp;lt;Windows.h&amp;gt;#include &amp;#34;ntdll.h&amp;#34;#pragma comment(lib, &amp;#34;ntdll&amp;#34;)  int main() { UNICODE_STRING NtImagePath; RtlInitUnicodeString(&amp;amp;NtImagePath, (PWSTR)L&amp;#34;\\??\\C:\\Windows\\System32\\mmc.exe&amp;#34;); PRTL_USER_PROCESS_PARAMETERS ProcessParameters = NULL; RtlCreateProcessParametersEx(&amp;amp;ProcessParameters, &amp;amp;NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED); PS_CREATE_INFO CreateInfo = { 0 }; CreateInfo.</description>
+#include &amp;lt;Windows.h&amp;gt; #include &amp;#34;ntdll.h&amp;#34; #pragma comment(lib, &amp;#34;ntdll&amp;#34;) int main() { UNICODE_STRING NtImagePath; RtlInitUnicodeString(&amp;amp;NtImagePath, (PWSTR)L&amp;#34;\\??\\C:\\Windows\\System32\\mmc.exe&amp;#34;); PRTL_USER_PROCESS_PARAMETERS ProcessParameters = NULL; RtlCreateProcessParametersEx(&amp;amp;ProcessParameters, &amp;amp;NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED); PS_CREATE_INFO CreateInfo = { 0 }; CreateInfo.</description>
     </item>
     
     <item>
@@ -65,7 +75,7 @@ The most common lateral movement techniques are performed via legitimate managem
       <guid>https://offensivedefence.co.uk/posts/csharp-process-class/</guid>
       <description>This post was requested from a Patron and will serve as a short primer for using the Process class in C#. This class is part of the System.Diagnostics namespace and is useful for enumerating, starting, and killing processes on a system.
 Enumerating Processes The Process class has 4 methods for enumerating processes on a system (which are quite self-explanatory):
- GetCurrentProcess GetProcessesByName GetProcessById GetProcesses  Process.GetProcesses() will return a Process[] of every process running on the local system.</description>
+GetCurrentProcess GetProcessesByName GetProcessById GetProcesses Process.GetProcesses() will return a Process[] of every process running on the local system.</description>
     </item>
     
     <item>
@@ -75,7 +85,7 @@ Enumerating Processes The Process class has 4 methods for enumerating processes 
       
       <guid>https://offensivedefence.co.uk/posts/aws-portal-terraform/</guid>
       <description>[Skip to the bottom of the page for the video demo]
-In a previous blog post, I outlined how to build a status portal for EC2 instances running in AWS. The portal itself was a Blazor app which used the AWS SDK to interact with (list/start/stop) the virtual machines.
+In a previous blog post, I outlined how to build a status portal for EC2 instances running in AWS. The portal itself was a Blazor app which used the AWS SDK to interact with (list/start/stop) the virtual machines.
 Heath Adams posted a question to Twitter about building a CMS that could use AWS and Terraform to manage lab deployments.</description>
     </item>
     

@@ -3,7 +3,7 @@
   <head>
     <title>AWS Status Portal - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.101.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@ We&rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch a
 We&rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later)." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/aws-status-portal/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-02-14T09:46:31&#43;00:00" />
-<meta property="article:modified_time" content="2021-02-14T09:46:31&#43;00:00" />
+<meta property="article:published_time" content="2021-02-14T09:46:31+00:00" />
+<meta property="article:modified_time" content="2021-02-14T09:46:31+00:00" />
 
 
 
@@ -144,11 +144,11 @@ We&rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch a
 <h3 id="building-the-lambda-function">Building the Lambda Function</h3>
 <p>Now we need to write the actual Lambda function that we&rsquo;ll invoke from CloudWatch.  This function just needs to take in the id of the instance who&rsquo;s state has changed and call our webhook.</p>
 <p>If you&rsquo;re familiar with Lambda, you&rsquo;ll know there are a multitude of runtimes that can be used, from Node.js to Python.  But we &lt;3 .NET, so we&rsquo;ll use the .NET Core 3.1 runtime.  There are actually loads of .NET templates that we can download via NuGet to get us started.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\Users\dduggan\source\repos\AWS-Status-Portal&gt;dotnet new -i Amazon.Lambda.Templates
-</code></pre></div><p>Create a new empty Lambda function:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\Users\dduggan\source\repos\AWS-Status-Portal&gt;dotnet new lambda.EmptyFunction --name NotifyEC2Webhook --profile dev --region eu-west-2
-The template &#34;Lambda Empty Function&#34; was created successfully.
-</code></pre></div><blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:\Users\dduggan\source\repos\AWS-Status-Portal&gt;dotnet new -i Amazon.Lambda.Templates
+</span></span></code></pre></div><p>Create a new empty Lambda function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:\Users\dduggan\source\repos\AWS-Status-Portal&gt;dotnet new lambda.EmptyFunction --name NotifyEC2Webhook --profile dev --region eu-west-2
+</span></span><span style="display:flex;"><span>The template &#34;Lambda Empty Function&#34; was created successfully.
+</span></span></code></pre></div><blockquote>
 <p><strong>Note:</strong> The &ldquo;dev&rdquo; profile is what I setup in the AWS Visual Studio extension.</p>
 </blockquote>
 <p>We can now add this project into our VS solution, and this is what it looks like:</p>
@@ -157,8 +157,8 @@ The template &#34;Lambda Empty Function&#34; was created successfully.
 <p>My implementation looks like this:</p>
 <p><img src="/images/aws-status-portal/complete-lambda.png" alt="" title="Complete Lambda"></p>
 <p>You can deploy the whole project from the command-line:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">C:\Users\dduggan\source\repos\AWS-Status-Portal\NotifyEC2Webhook\src\NotifyEC2Webhook&gt;dotnet lambda deploy-function NotifyEC2Webhook
-</code></pre></div><p>Go over to the AWS Lambda page and you&rsquo;ll see your Lambda function there:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>C:\Users\dduggan\source\repos\AWS-Status-Portal\NotifyEC2Webhook\src\NotifyEC2Webhook&gt;dotnet lambda deploy-function NotifyEC2Webhook
+</span></span></code></pre></div><p>Go over to the AWS Lambda page and you&rsquo;ll see your Lambda function there:</p>
 <p><img src="/images/aws-status-portal/aws-lambda-functions.png" alt="" title="Complete Lambda"></p>
 <p>We can (and should) test this function after deployment.</p>
 <p>Click on the function name to go to its configuration options - in the top-right click <strong>Configure test events</strong> and create a new test event with a dummy instance_id (such as <strong>&ldquo;i-123456789&rdquo;</strong>).  Place a breakpoint somewhere in the webhook controller and click the <strong>Test</strong> button.</p>

