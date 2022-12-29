@@ -5,7 +5,17 @@
     <link>https://offensivedefence.co.uk/authors/rastamouse/</link>
     <description>Recent content in Rasta Mouse on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Tue, 01 Nov 2022 10:22:58 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 29 Dec 2022 19:22:25 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Custom Implicit &amp; Explicit Conversions in C#</title>
+      <link>https://offensivedefence.co.uk/posts/implicit-explicit-conversions/</link>
+      <pubDate>Thu, 29 Dec 2022 19:22:25 +0000</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/implicit-explicit-conversions/</guid>
+      <description>Implicit and explicited operators are provided as a means of converting one datatype to another.
+// this is an implicit conversion from an int to a double int i = 8; double d = i; // this is an explicit conversion from a double to an int double d = 8.8; int i = (int) d; I recently learned that you can implement your own implicit/explicit operators to convert custom classes, which is useful when needing to convert between API, domain and storage objects in an application.</description>
+    </item>
+    
     <item>
       <title>The Information Security Kardashev Scale</title>
       <link>https://offensivedefence.co.uk/posts/kardashev/</link>

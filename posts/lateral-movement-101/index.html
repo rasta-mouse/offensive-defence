@@ -3,7 +3,7 @@
   <head>
     <title>Lateral Movement 101 - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.101.0" />
+    <meta name="generator" content="Hugo 0.108.0">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.f90f5edd436ec7b74ad05479a05705770306911f721193e7845948fb07fe1335.css" />
@@ -22,7 +22,6 @@ The most common lateral movement techniques are performed via legitimate managem
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/lateral-movement-101/" /><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2021-10-12T09:25:13+01:00" />
 <meta property="article:modified_time" content="2021-10-12T09:25:13+01:00" />
-
 
 
   </head>
@@ -133,9 +132,9 @@ The most common lateral movement techniques are performed via legitimate managem
 </span></span><span style="display:flex;"><span>PS C:\&gt; $password = ConvertTo-SecureString <span style="color:#e6db74">&#34;Passw0rd!&#34;</span> -AsPlainText -Force
 </span></span><span style="display:flex;"><span>PS C:\&gt; $cred = New-Object System.Management.Automation.PSCredential($username, $password)
 </span></span><span style="display:flex;"><span>PS C:\&gt; Enter-PSSession -ComputerName dc.lab.local -Credential $cred
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">[dc.lab.local]</span><span style="color:#960050;background-color:#1e0010">:</span> PS C:\Users\Administrator\Documents&gt; hostname
+</span></span><span style="display:flex;"><span>[<span style="color:#66d9ef">dc.lab.local</span>]<span style="color:#960050;background-color:#1e0010">:</span> PS C:\Users\Administrator\Documents&gt; hostname
 </span></span><span style="display:flex;"><span>dc
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">[dc.lab.local]</span><span style="color:#960050;background-color:#1e0010">:</span> PS C:\Users\Administrator\Documents&gt; whoami
+</span></span><span style="display:flex;"><span>[<span style="color:#66d9ef">dc.lab.local</span>]<span style="color:#960050;background-color:#1e0010">:</span> PS C:\Users\Administrator\Documents&gt; whoami
 </span></span><span style="display:flex;"><span>lab\administrator
 </span></span></code></pre></div><p>If you don&rsquo;t have an interactive prompt, <code>Invoke-Command</code> with <code>-ScriptBlock</code> can be used instead.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span>PS C:\&gt; Invoke-Command -ComputerName dc.lab.local -Credential $cred -ScriptBlock { hostname; whoami }
