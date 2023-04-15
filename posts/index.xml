@@ -5,7 +5,19 @@
     <link>https://offensivedefence.co.uk/posts/</link>
     <description>Recent content in Posts on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Thu, 29 Dec 2022 19:22:25 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 15 Apr 2023 21:10:42 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>D/Invoke v1.0.5</title>
+      <link>https://offensivedefence.co.uk/posts/dinvoke-105/</link>
+      <pubDate>Sat, 15 Apr 2023 21:10:42 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/dinvoke-105/</guid>
+      <description>This post summerises the recent changes to my D/Invoke fork.
+API Hashing API hashing is already available on methods such as GetLibraryAddress and GetExportAddress.
+var hAddress = Generic.GetLibraryAddress( &amp;#34;kernel32.dll&amp;#34;, &amp;#34;2B70CDC3FF17AB3948E01E1A318B8964&amp;#34;, 0xdeadbeef); or
+var hModule = Generic.GetLoadedModuleAddress(&amp;#34;kernel32.dll&amp;#34;); var hAddress = Generic.GetExportAddress( hModule, &amp;#34;2B70CDC3FF17AB3948E01E1A318B8964&amp;#34;, 0xdeadbeef); However, we have lacked a function that has allowed us to get a module handle by hash value. GetLoadedModuleAddress now has an additional overload to support this.</description>
+    </item>
+    
     <item>
       <title>Custom Implicit &amp; Explicit Conversions in C#</title>
       <link>https://offensivedefence.co.uk/posts/implicit-explicit-conversions/</link>
