@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Bypassing Defender with ThreatCheck &amp; Ghidra - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.113.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.d06e7fa8ea7411023f3fd96c3532209c4fc849199c44396e531a0857e03668bb.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Bypassing Defender with ThreatCheck &amp; Ghidra"/>
+<meta name="twitter:description" content="Intro It should come as no surprise when payloads generated in their default state get swallowed up by Defender, as Microsoft have both the means and motivation to proactively produce signatures for open and closed source/commericial tooling. One tactic to get around these is to generate heavily obfuscated, compressed, or encrypted payloads which are unpacked at runtime. However, highly entropic payloads can be just as problematc. Daniel Bohannon and Lee Holmes also wrote a paper called Revoke-Obfuscation: PowerShell Obfuscation Detection Using Science which shows several methods for detecting obfuscated PowerShell scripts."/>
+
+    <meta property="og:title" content="Bypassing Defender with ThreatCheck &amp; Ghidra" />
+<meta property="og:description" content="Intro It should come as no surprise when payloads generated in their default state get swallowed up by Defender, as Microsoft have both the means and motivation to proactively produce signatures for open and closed source/commericial tooling. One tactic to get around these is to generate heavily obfuscated, compressed, or encrypted payloads which are unpacked at runtime. However, highly entropic payloads can be just as problematc. Daniel Bohannon and Lee Holmes also wrote a paper called Revoke-Obfuscation: PowerShell Obfuscation Detection Using Science which shows several methods for detecting obfuscated PowerShell scripts." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/threatcheck-ghidra/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-06-07T10:16:02+01:00" />
+<meta property="article:modified_time" content="2023-06-07T10:16:02+01:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Bypassing Defender with ThreatCheck &amp; Ghidra</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Jun 7, 2023
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          3 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <h2 id="intro">Intro</h2>
+<p>It should come as no surprise when payloads generated in their default state get swallowed up by Defender, as Microsoft have both the means and motivation to proactively produce signatures for open and closed source/commericial tooling.  One tactic to get around these is to generate heavily obfuscated, compressed, or encrypted payloads which are unpacked at runtime.  However, <a href="https://practicalsecurityanalytics.com/file-entropy/">highly entropic</a> payloads can be just as problematc.  Daniel Bohannon and Lee Holmes also wrote a paper called <a href="https://www.blackhat.com/docs/us-17/thursday/us-17-Bohannon-Revoke-Obfuscation-PowerShell-Obfuscation-Detection-And%20Evasion-Using-Science-wp.pdf">Revoke-Obfuscation: PowerShell Obfuscation Detection Using Science</a> which shows several methods for detecting obfuscated PowerShell scripts.</p>
+<p>A philosophy that has stuck with me is to only make the minimum changes necessary to circumvent a particular static signature - i.e. solve the problem with a scalpel rather than a sledgehammer.  This post will present a methodology for identifying &ldquo;bad bytes&rdquo; in a payload and finding their location within the compiled binary.  To demonstrate, I will use <a href="https://github.com/rasta-mouse/ThreatCheck">ThreatCheck</a> and <a href="https://github.com/NationalSecurityAgency/ghidra">Ghidra</a> to analyze and modify a Beacon payload generated from Cobalt Strike.</p>
+<h2 id="bad-bytes">Bad Bytes</h2>
+<p>This is the easy part.  ThreatCheck works by splitting the binary up into little chunks and scanning each one with Defender.  It will attempt to find the smallest possible chunk that triggers a positive result and prints an array of bytes to the console.</p>
+<p><img src="/images/threatcheck-ghidra/threatcheck.png" alt="" title="ThreatCheck bad bytes"></p>
+<p>ThreatCheck was able to identify a block of code that Defender detects as malicious, but there is no context about which part of the payload it is.  This is where Ghidra comes into play.</p>
+<h2 id="decompiling">Decompiling</h2>
+<p>Load the payload into a new project and have Ghidra run through its automated analysis. Then use the <strong>Search Memory</strong> function to find a sequence of bytes output from ThreatCheck.</p>
+<p><img src="/images/threatcheck-ghidra/search-memory.png" alt="" title="Ghidra Search Memory"></p>
+<p>ThreatCheck always attempts to print 1024 bytes to the console by working its way backwards from the end of the &ldquo;bad byte&rdquo; range.  So even though 1024 bytes are displayed, it&rsquo;s not an indication that the entirety was malicious.  Since the bad bytes are always at the end of those displayed, use a hex sequence from the bottom rather than the top.  In this example, I&rsquo;m searching for <code>8A 54 15 00 32 14 07 88 14 03 48 FF C0 EB E7 48</code>.</p>
+<p><img src="/images/threatcheck-ghidra/search-memory-result.png" alt="" title="Ghidra Search Memory result"></p>
+<p>I have a single result at <code>004015d1</code> and clicking on the row will display the code main Ghidra window. The &ldquo;Listing&rdquo; view shows the CPU instructions in a simple list and the &ldquo;Decompile&rdquo; view attempts to reverse the code of the function back to its original source.  Now we know that the offending block of code is likely this <code>for</code> loop inside <code>FUN_00401595</code>.</p>
+<p><img src="/images/threatcheck-ghidra/decompiled.png" alt="" title="Ghidra decompiled"></p>
+<p>The loop comes after a call to <code>VirtualAlloc</code> but before a call to <code>VirtualProtect</code> and <code>CreateThread</code>.  After searching through Cobalt Strike&rsquo;s Artifact Kit source code, we come across the <code>spawn</code> function located in <code>patch.c</code>.  The loop is responsible for decoding the Beacon shellcode prior to execution and writing it into the allocated memory region.</p>
+<p><img src="/images/threatcheck-ghidra/decode-payload-routine.png" alt="" title="Artifact Kit"></p>
+<p>All we need to do is modify the loop so that it compiles to a different byte sequence (how you do that is up to you).  Then, once the payload has been regenerated, Defender will no longer match on that static signature.</p>
+<p><img src="/images/threatcheck-ghidra/no-threat.png" alt="" title="No Threat"></p>
+<h2 id="conclusion">Conclusion</h2>
+<p>This was a singular example of how to analyse and modify a Beacon payload from Cobalt Strike, but the same methodology can be applied to any payload generating tool for which you can access the source code.  This post demonstrates that complex manipulations are not required to bypass static signatures and why defenders should not soley rely them to detect &ldquo;well known&rdquo; tooling.</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>

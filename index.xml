@@ -5,7 +5,17 @@
     <link>https://offensivedefence.co.uk/</link>
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sat, 15 Apr 2023 21:10:42 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <language>en</language>
+    <lastBuildDate>Wed, 07 Jun 2023 10:16:02 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Bypassing Defender with ThreatCheck &amp; Ghidra</title>
+      <link>https://offensivedefence.co.uk/posts/threatcheck-ghidra/</link>
+      <pubDate>Wed, 07 Jun 2023 10:16:02 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/threatcheck-ghidra/</guid>
+      <description>Intro It should come as no surprise when payloads generated in their default state get swallowed up by Defender, as Microsoft have both the means and motivation to proactively produce signatures for open and closed source/commericial tooling. One tactic to get around these is to generate heavily obfuscated, compressed, or encrypted payloads which are unpacked at runtime. However, highly entropic payloads can be just as problematc. Daniel Bohannon and Lee Holmes also wrote a paper called Revoke-Obfuscation: PowerShell Obfuscation Detection Using Science which shows several methods for detecting obfuscated PowerShell scripts.</description>
+    </item>
+    
     <item>
       <title>D/Invoke v1.0.5</title>
       <link>https://offensivedefence.co.uk/posts/dinvoke-105/</link>
