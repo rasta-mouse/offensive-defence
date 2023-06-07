@@ -34,7 +34,7 @@ a {
 code {
   font-family: monospace,monospace;
   font-size: 1em;
-  color: rgba($light-color, .8);
+  color: rgba($primary-color, .8);
 }
 
 pre {
@@ -52,4 +52,9 @@ pre {
 }
 ::-moz-selection {
   background: rgba($light-color, .25);
+}
+
+// Override app-container size
+.app-container {
+  max-width: 100% !important;
 }

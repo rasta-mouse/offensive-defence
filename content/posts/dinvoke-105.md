@@ -2,6 +2,8 @@
 title: "D/Invoke v1.0.5"
 date: 2023-04-15T21:10:42+01:00
 draft: false
+authors:
+    - RastaMouse
 ---
 
 This post summerises the recent changes to my [D/Invoke](https://github.com/rasta-mouse/DInvoke/) fork.
