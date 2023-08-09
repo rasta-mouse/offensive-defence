@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Cobalt Strike Process Inject Kit - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.113.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.d06e7fa8ea7411023f3fd96c3532209c4fc849199c44396e531a0857e03668bb.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Cobalt Strike Process Inject Kit"/>
+<meta name="twitter:description" content="Introduction I was scrolling through one of the social media dumpster fires the other day and whizzed past a post that caught my attention. The post itself was not paricularly novel - it was a process injection technique implemented as a Cobalt Strike Beacon Object File (BOF). I had a look at the included Aggressor script and noticed that it was registering a new command with beacon_command_register, reading a shellcode (."/>
+
+    <meta property="og:title" content="Cobalt Strike Process Inject Kit" />
+<meta property="og:description" content="Introduction I was scrolling through one of the social media dumpster fires the other day and whizzed past a post that caught my attention. The post itself was not paricularly novel - it was a process injection technique implemented as a Cobalt Strike Beacon Object File (BOF). I had a look at the included Aggressor script and noticed that it was registering a new command with beacon_command_register, reading a shellcode (." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/cs-process-inject-kit/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-08-09T09:21:07+01:00" />
+<meta property="article:modified_time" content="2023-08-09T09:21:07+01:00" />
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">Cobalt Strike Process Inject Kit</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          Aug 9, 2023
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          4 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <h2 id="introduction">Introduction</h2>
+<p>I was scrolling through one of the social media dumpster fires the other day and whizzed past a post that caught my attention.  The post itself was not paricularly novel - it was a process injection technique implemented as a Cobalt Strike Beacon Object File (BOF).  I had a look at the included <a href="https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics/agressor_script.htm">Aggressor</a> script and noticed that it was registering a new command with <code>beacon_command_register</code>, reading a shellcode (<code>.bin</code>) file from disk and executing the BOF via the <a href="https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics_aggressor-scripts/as-resources_functions.htm?Highlight=inline_execute#beacon_inline_execute">beacon_inline_execute</a> function.  Curiosity piqued, I went in search of some other process injection BOFs across GitHub and the Cobalt Strike <a href="https://cobalt-strike.github.io/community_kit/">Community Kit</a>.  I only looked at a handful of them but found that they all worked in the same way.</p>
+<p>I was left wondering why none of them were using the <a href="https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics_aggressor-scripts/as-resources_hooks.htm?Highlight=PROCESS_INJECT_SPAWN#PROCESS_INJECT_SPAWN">PROCESS_INJECT_SPAWN</a> and <a href="https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics_aggressor-scripts/as-resources_hooks.htm?Highlight=PROCESS_INJECT_SPAWN#PROCESS_INJECT_EXPLICIT">PROCESS_INJECT_EXPLICIT</a> hooks that have been around since CS 4.5 (circa 2021).  Admittedly, some of the BOFs did pre-date this release but most of them didn&rsquo;t.  My only assumption is that perhaps these hooks are not that well known, so the aim of this post is to provide an overview and why you may want to implement your injection BOFs in this way.</p>
+<h2 id="spawn-vs-explicit">Spawn vs Explicit</h2>
+<p>Fundamentally, these hooks allow you to define how both the fork &amp; run and explicit injection techniques are handled when executing post-exploitation commands that perform injection.  Where the BOFs mentioned above only expose shinject-style functionality, these hooks extend the customisation to commands such as <code>inject</code>, <code>dllinject</code>, <code>psinject</code>, <code>shinject</code>, <code>mimikatz</code>, <code>powerpick</code>, and more.  The main notable exception is <code>execute-assembly</code>.</p>
+<p>The <code>spawn</code> (fork &amp; run) variant creates a temporary sacrificial process and injects the post-ex capability into it.  The <code>explicit</code> variant injects the post-ex capability into a process that already exists.  Some commands are spawn only (e.g. <code>powerpick</code>); some are explicit only (e.g. <code>inject</code>); and some can be both (e.g. <code>mimikatz</code>).  You can tell which variant a command will use by its arguments - a command that takes a <code>pid</code> &amp; <code>arch</code> will use the explicit variant, and commands that do not will use spawn.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>mimikatz [pid] [arch] [module::command] &lt;args&gt;      &lt;-- EXPLICIT
+</span></span><span style="display:flex;"><span>mimikatz [module::command] &lt;args&gt;                   &lt;-- SPAWN
+</span></span></code></pre></div><h2 id="inject-kit">Inject Kit</h2>
+<p>The Cobalt Strike <a href="https://download.cobaltstrike.com/scripts">Arsenal</a> contains a process inject kit to assist with the development of these BOFs.  The default code calls internal Beacon APIs such as <code>BeaconSpawnTemporaryProcess</code>, <code>BeaconInjectTemporaryProcess</code>, and <code>BeaconInjectProcess</code> - the behavours for which are controlled with <a href="https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics/malleable-c2-extend_process-injection.htm">Malleable C2</a> and other options from the Beacon session.</p>
+<p>It&rsquo;s worth noting that you&rsquo;re not limited to using these APIs, but there are some gotchas if you don&rsquo;t use them at all.  For instance, <code>BeaconSpawnTemporaryProcess</code> will account for the PPID, spawnto, and blockdll options of the Beacon session.  There is a <code>BeaconGetSpawnTo</code> API that will return the current spawnto, but there is no equivilent to fetch the PPID and blockdll settings.  There is also no Aggressor function that can fetch these (<a href="https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics_aggressor-scripts/as-resources_functions.htm?Highlight=barch#bppid">bppid</a> and <a href="https://hstechdocs.helpsystems.com/manuals/cobaltstrike/current/userguide/content/topics_aggressor-scripts/as-resources_functions.htm?Highlight=barch#bblockdlls">bblockdlls</a> can only set new values, not return the current values), so they cannot be packed into the BOF arguments either.</p>
+<p>It therefore does not seem possible to produce a 1:1 functional relica of the internal Beacon functionality.</p>
+<p>Furthermore, you cannot pass any additional <a href="https://learn.microsoft.com/en-us/windows/win32/procthread/process-creation-flags">process creation flags</a> to <code>BeaconSpawnTemporaryProcess</code>, so processes cannot be spawned in a suspended state.  You can call a WinAPI directly, such as <a href="https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa">CreateProcessA</a> if your injection techniques relies on that, but you will lose the PPID and blockdll integration (you can still hardcode them of course).</p>
+<p>In most cases, you will probably want to replace <code>BeaconInjectTemporaryProcess</code> and <code>BeaconInjectProcess</code> with your own injection logic.  For example:</p>
+<p><img src="/images/inject-kit/custom-injection.png" alt="" title="Custom Injection Logic"></p>
+<p>The actual injection used here is not important - it&rsquo;s just to show that I&rsquo;m not using the default implementation.  One thing to note is that you should not wait on handles, such as a thread handle.</p>
+<p>Once you have custom injection in <code>process_inject_explicit.c</code> and <code>process_inject_spawn.c</code>, build the kit.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ ./build.sh /mnt/c/Tools/cobaltstrike/inject
+</span></span><span style="display:flex;"><span>[Process Inject kit] [+] You have a x86_64 mingw--I will recompile the process inject beacon object files
+</span></span><span style="display:flex;"><span>[Process Inject kit] [*] Compile process_inject_spawn.x64.o
+</span></span><span style="display:flex;"><span>[Process Inject kit] [*] Compile process_inject_spawn.x86.o
+</span></span><span style="display:flex;"><span>[Process Inject kit] [*] Compile process_inject_explicit.x64.o
+</span></span><span style="display:flex;"><span>[Process Inject kit] [*] Compile process_inject_explicit.x86.o
+</span></span><span style="display:flex;"><span>[Process Inject kit] [+] The Process inject object files are saved in &#39;/mnt/c/Tools/cobaltstrike/inject&#39;
+</span></span></code></pre></div><p>You then load <code>processinject.cna</code> via the Script Manager and hey-presto.  Each variant will now use your custom injection.</p>
+<p><img src="/images/inject-kit/coffee.png" alt="" title="Mimikatz spawn &amp; explict"></p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Even though there are some limitations, the process inject kit allows you to apply custom injection techniques to multiple Beacon commands, which is much more versatile than only exposing shinject functionality.  If you&rsquo;re an author of shellcode injection BOFs, I highly recommend building them as part of this kit, rather than standalone.</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>

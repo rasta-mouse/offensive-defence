@@ -6,7 +6,16 @@
     <description>Recent content on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 07 Jun 2023 10:16:02 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 09 Aug 2023 09:21:07 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Cobalt Strike Process Inject Kit</title>
+      <link>https://offensivedefence.co.uk/posts/cs-process-inject-kit/</link>
+      <pubDate>Wed, 09 Aug 2023 09:21:07 +0100</pubDate>
+      
+      <guid>https://offensivedefence.co.uk/posts/cs-process-inject-kit/</guid>
+      <description>Introduction I was scrolling through one of the social media dumpster fires the other day and whizzed past a post that caught my attention. The post itself was not paricularly novel - it was a process injection technique implemented as a Cobalt Strike Beacon Object File (BOF). I had a look at the included Aggressor script and noticed that it was registering a new command with beacon_command_register, reading a shellcode (.</description>
+    </item>
+    
     <item>
       <title>Bypassing Defender with ThreatCheck &amp; Ghidra</title>
       <link>https://offensivedefence.co.uk/posts/threatcheck-ghidra/</link>
