@@ -3,18 +3,21 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://offensivedefence.co.uk/authors/</loc>
-    <lastmod>2023-08-09T09:21:07+01:00</lastmod>
+    <lastmod>2024-02-04T13:39:41+00:00</lastmod>
   </url><url>
-    <loc>https://offensivedefence.co.uk/posts/cs-process-inject-kit/</loc>
-    <lastmod>2023-08-09T09:21:07+01:00</lastmod>
+    <loc>https://offensivedefence.co.uk/posts/nt-token-theft/</loc>
+    <lastmod>2024-02-04T13:39:41+00:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/</loc>
-    <lastmod>2023-08-09T09:21:07+01:00</lastmod>
+    <lastmod>2024-02-04T13:39:41+00:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/posts/</loc>
-    <lastmod>2023-08-09T09:21:07+01:00</lastmod>
+    <lastmod>2024-02-04T13:39:41+00:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/authors/rastamouse/</loc>
+    <lastmod>2024-02-04T13:39:41+00:00</lastmod>
+  </url><url>
+    <loc>https://offensivedefence.co.uk/posts/cs-process-inject-kit/</loc>
     <lastmod>2023-08-09T09:21:07+01:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/posts/threatcheck-ghidra/</loc>
@@ -35,7 +38,7 @@
     <loc>https://offensivedefence.co.uk/posts/covenant-powerkatz/</loc>
     <lastmod>2022-05-13T10:38:32+01:00</lastmod>
   </url><url>
-    <loc>https://offensivedefence.co.uk/posts/ntcreateuserprocess/</loc>
+    <loc>https://offensivedefence.co.uk/posts/nt-create-user-process/</loc>
     <lastmod>2022-05-12T17:26:06+01:00</lastmod>
   </url><url>
     <loc>https://offensivedefence.co.uk/posts/openapi-client-swagger/</loc>

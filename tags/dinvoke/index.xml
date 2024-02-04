@@ -6,38 +6,28 @@
     <description>Recent content in dinvoke on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 24 Jan 2021 15:19:05 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/tags/dinvoke/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 24 Jan 2021 15:19:05 +0000</lastBuildDate>
+    <atom:link href="https://offensivedefence.co.uk/tags/dinvoke/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Syscalls with D/Invoke</title>
       <link>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</link>
       <pubDate>Sun, 24 Jan 2021 15:19:05 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</guid>
-      <description>Windows Architecture Primer x86 processors have 4 privilege levels, known as rings, that control access to memory and CPU operations. They range from Ring 0, the most privileged, to Ring 3.
-Image credit: Wikipedia
-Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example.</description>
+      <description>Windows Architecture Primer x86 processors have 4 privilege levels, known as rings, that control access to memory and CPU operations. They range from Ring 0, the most privileged, to Ring 3.&#xA;Image credit: Wikipedia&#xA;Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example.</description>
     </item>
-    
     <item>
       <title>D/Invokify PPID Spoofy &amp; BlockDLLs</title>
       <link>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</link>
       <pubDate>Wed, 02 Dec 2020 10:52:26 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</guid>
-      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).
-This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
+      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).&#xA;This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
     </item>
-    
     <item>
       <title>Module Stomping in C#</title>
       <link>https://offensivedefence.co.uk/posts/module-stomping/</link>
       <pubDate>Fri, 20 Nov 2020 16:22:10 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/module-stomping/</guid>
-      <description>A little while ago I published what I described as a &amp;ldquo;barely functional module stomping in C#&amp;rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.
-Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.
-What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</description>
+      <description>A little while ago I published what I described as a &amp;ldquo;barely functional module stomping in C#&amp;rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.&#xA;Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.&#xA;What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</description>
     </item>
-    
   </channel>
 </rss>

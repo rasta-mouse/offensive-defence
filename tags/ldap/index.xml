@@ -6,16 +6,14 @@
     <description>Recent content in ldap on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 28 Apr 2021 16:32:31 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/tags/ldap/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 28 Apr 2021 16:32:31 +0100</lastBuildDate>
+    <atom:link href="https://offensivedefence.co.uk/tags/ldap/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Domain Enumeration Tool</title>
       <link>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</link>
       <pubDate>Wed, 28 Apr 2021 16:32:31 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</guid>
-      <description>Introduction A couple of days ago (obviously at the time of writing this post), FortyNorth Security tweeted about a new tool they were releasing called EDD (Enumerate Domain Data). This is a .NET Console Application that aims to provide a .NET alternative to the kind of domain enumeration that PowerView is well known for (a bit like SharpView).
-I spent some time looking at the EDD codebase and ended up submitting a fairly substantial PR.</description>
+      <description>Introduction A couple of days ago (obviously at the time of writing this post), FortyNorth Security tweeted about a new tool they were releasing called EDD (Enumerate Domain Data). This is a .NET Console Application that aims to provide a .NET alternative to the kind of domain enumeration that PowerView is well known for (a bit like SharpView).&#xA;I spent some time looking at the EDD codebase and ended up submitting a fairly substantial PR.</description>
     </item>
-    
   </channel>
 </rss>

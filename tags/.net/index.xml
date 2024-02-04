@@ -6,119 +6,84 @@
     <description>Recent content in .net on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 28 Apr 2021 16:32:31 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/tags/.net/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 28 Apr 2021 16:32:31 +0100</lastBuildDate>
+    <atom:link href="https://offensivedefence.co.uk/tags/.net/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Domain Enumeration Tool</title>
       <link>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</link>
       <pubDate>Wed, 28 Apr 2021 16:32:31 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</guid>
-      <description>Introduction A couple of days ago (obviously at the time of writing this post), FortyNorth Security tweeted about a new tool they were releasing called EDD (Enumerate Domain Data). This is a .NET Console Application that aims to provide a .NET alternative to the kind of domain enumeration that PowerView is well known for (a bit like SharpView).
-I spent some time looking at the EDD codebase and ended up submitting a fairly substantial PR.</description>
+      <description>Introduction A couple of days ago (obviously at the time of writing this post), FortyNorth Security tweeted about a new tool they were releasing called EDD (Enumerate Domain Data). This is a .NET Console Application that aims to provide a .NET alternative to the kind of domain enumeration that PowerView is well known for (a bit like SharpView).&#xA;I spent some time looking at the EDD codebase and ended up submitting a fairly substantial PR.</description>
     </item>
-    
     <item>
       <title>AWS Status Portal</title>
       <link>https://offensivedefence.co.uk/posts/aws-status-portal/</link>
       <pubDate>Sun, 14 Feb 2021 09:46:31 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/aws-status-portal/</guid>
-      <description>Intro I recently took an interest in the AWS Visual Studio extension and the AWS .NET Core SDK, and came up with this mini-project to showcase some of the neat things you can do with them. This post will show you how to build a (very basic) EC2 status monitoring portal in Blazor.
-We&amp;rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later).</description>
+      <description>Intro I recently took an interest in the AWS Visual Studio extension and the AWS .NET Core SDK, and came up with this mini-project to showcase some of the neat things you can do with them. This post will show you how to build a (very basic) EC2 status monitoring portal in Blazor.&#xA;We&amp;rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later).</description>
     </item>
-    
     <item>
       <title>Syscalls with D/Invoke</title>
       <link>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</link>
       <pubDate>Sun, 24 Jan 2021 15:19:05 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</guid>
-      <description>Windows Architecture Primer x86 processors have 4 privilege levels, known as rings, that control access to memory and CPU operations. They range from Ring 0, the most privileged, to Ring 3.
-Image credit: Wikipedia
-Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example.</description>
+      <description>Windows Architecture Primer x86 processors have 4 privilege levels, known as rings, that control access to memory and CPU operations. They range from Ring 0, the most privileged, to Ring 3.&#xA;Image credit: Wikipedia&#xA;Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example.</description>
     </item>
-    
     <item>
       <title>Embedding Resources with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</link>
       <pubDate>Thu, 31 Dec 2020 12:00:45 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</guid>
-      <description>Intro In this post, I&amp;rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.
-Injector Template I&amp;rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&amp;rsquo;s embedded within it and then inject it into a target process.
-using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&amp;#34;Shellcode&amp;#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly.</description>
+      <description>Intro In this post, I&amp;rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.&#xA;Injector Template I&amp;rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&amp;rsquo;s embedded within it and then inject it into a target process.&#xA;using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&amp;#34;Shellcode&amp;#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly.</description>
     </item>
-    
     <item>
       <title>DLL&#39;s to EXE&#39;s with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</link>
       <pubDate>Wed, 30 Dec 2020 20:25:03 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</guid>
-      <description>Intro Continuing with my dnlib kick, this post will demonstrate how to &amp;ldquo;convert&amp;rdquo; a .NET DLL to an EXE. We&amp;rsquo;ll use the same DLL code as in the previous post.
-using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&amp;#34;Hello from DemoDLL&amp;#34;); } } } If you&amp;rsquo;ve dabbled in C# enough, you&amp;rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.</description>
+      <description>Intro Continuing with my dnlib kick, this post will demonstrate how to &amp;ldquo;convert&amp;rdquo; a .NET DLL to an EXE. We&amp;rsquo;ll use the same DLL code as in the previous post.&#xA;using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&amp;#34;Hello from DemoDLL&amp;#34;); } } } If you&amp;rsquo;ve dabbled in C# enough, you&amp;rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.</description>
     </item>
-    
     <item>
       <title>Adding DLL Exports with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-dllexport/</link>
       <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-dllexport/</guid>
-      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.
-I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.
-Starting from a .</description>
+      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.&#xA;I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.&#xA;Starting from a .</description>
     </item>
-    
     <item>
       <title>AppDomain.AssemblyResolve</title>
       <link>https://offensivedefence.co.uk/posts/assembly-resolve/</link>
       <pubDate>Mon, 21 Dec 2020 12:06:54 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/assembly-resolve/</guid>
-      <description>Intro Jean Maes posted a blog entitled &amp;ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&amp;rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.
-For a decent background, I encourage readers to review Jean&amp;rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it.</description>
+      <description>Intro Jean Maes posted a blog entitled &amp;ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&amp;rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.&#xA;For a decent background, I encourage readers to review Jean&amp;rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it.</description>
     </item>
-    
     <item>
       <title>D/Invokify PPID Spoofy &amp; BlockDLLs</title>
       <link>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</link>
       <pubDate>Wed, 02 Dec 2020 10:52:26 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</guid>
-      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).
-This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
+      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).&#xA;This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
     </item>
-    
     <item>
       <title>Module Stomping in C#</title>
       <link>https://offensivedefence.co.uk/posts/module-stomping/</link>
       <pubDate>Fri, 20 Nov 2020 16:22:10 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/module-stomping/</guid>
-      <description>A little while ago I published what I described as a &amp;ldquo;barely functional module stomping in C#&amp;rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.
-Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.
-What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</description>
+      <description>A little while ago I published what I described as a &amp;ldquo;barely functional module stomping in C#&amp;rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.&#xA;Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.&#xA;What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</description>
     </item>
-    
     <item>
       <title>Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV</title>
       <link>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</link>
       <pubDate>Sat, 07 Nov 2020 11:54:14 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</guid>
       <description>Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution. AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools. However, it&amp;rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&amp;rsquo;t have the skills or knowledge to make the necesary modifications.</description>
     </item>
-    
     <item>
       <title>SharpSploit v1.6 Updates</title>
       <link>https://offensivedefence.co.uk/posts/sharpsploit-16/</link>
       <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/sharpsploit-16/</guid>
-      <description>Ryan Cobb has just tagged the release of SharpSploit v1.6, which comes with a number of cool changes. The most significant of which includes some very clever Dynamic Invocation functionality that TheWover has blogged about. My contributions were relatively minor and will be the subject of this post.
-Enhanced WMI Output SharpSploit has had a WMIExecute method in the SharpSploit.LateralMovement namespace for as long as I can remember. It took in a target ComputerName, a Command to execute and optional plaintext creds, but it returned a bool.</description>
+      <description>Ryan Cobb has just tagged the release of SharpSploit v1.6, which comes with a number of cool changes. The most significant of which includes some very clever Dynamic Invocation functionality that TheWover has blogged about. My contributions were relatively minor and will be the subject of this post.&#xA;Enhanced WMI Output SharpSploit has had a WMIExecute method in the SharpSploit.LateralMovement namespace for as long as I can remember. It took in a target ComputerName, a Command to execute and optional plaintext creds, but it returned a bool.</description>
     </item>
-    
   </channel>
 </rss>

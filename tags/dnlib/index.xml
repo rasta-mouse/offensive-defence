@@ -6,38 +6,28 @@
     <description>Recent content in dnlib on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Thu, 31 Dec 2020 12:00:45 +0000</lastBuildDate><atom:link href="https://offensivedefence.co.uk/tags/dnlib/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 31 Dec 2020 12:00:45 +0000</lastBuildDate>
+    <atom:link href="https://offensivedefence.co.uk/tags/dnlib/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Embedding Resources with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</link>
       <pubDate>Thu, 31 Dec 2020 12:00:45 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</guid>
-      <description>Intro In this post, I&amp;rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.
-Injector Template I&amp;rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&amp;rsquo;s embedded within it and then inject it into a target process.
-using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&amp;#34;Shellcode&amp;#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly.</description>
+      <description>Intro In this post, I&amp;rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.&#xA;Injector Template I&amp;rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&amp;rsquo;s embedded within it and then inject it into a target process.&#xA;using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&amp;#34;Shellcode&amp;#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly.</description>
     </item>
-    
     <item>
       <title>DLL&#39;s to EXE&#39;s with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</link>
       <pubDate>Wed, 30 Dec 2020 20:25:03 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</guid>
-      <description>Intro Continuing with my dnlib kick, this post will demonstrate how to &amp;ldquo;convert&amp;rdquo; a .NET DLL to an EXE. We&amp;rsquo;ll use the same DLL code as in the previous post.
-using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&amp;#34;Hello from DemoDLL&amp;#34;); } } } If you&amp;rsquo;ve dabbled in C# enough, you&amp;rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.</description>
+      <description>Intro Continuing with my dnlib kick, this post will demonstrate how to &amp;ldquo;convert&amp;rdquo; a .NET DLL to an EXE. We&amp;rsquo;ll use the same DLL code as in the previous post.&#xA;using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&amp;#34;Hello from DemoDLL&amp;#34;); } } } If you&amp;rsquo;ve dabbled in C# enough, you&amp;rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.</description>
     </item>
-    
     <item>
       <title>Adding DLL Exports with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-dllexport/</link>
       <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-dllexport/</guid>
-      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.
-I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.
-Starting from a .</description>
+      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.&#xA;I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.&#xA;Starting from a .</description>
     </item>
-    
   </channel>
 </rss>

@@ -3,15 +3,14 @@
   <head>
     <title>Updating Mimikatz in Covenant - Offensive Defence</title>
     <meta charset="utf-8" />
-    <meta name="generator" content="Hugo 0.113.0">
+    <meta name="generator" content="Hugo 0.122.0">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.d06e7fa8ea7411023f3fd96c3532209c4fc849199c44396e531a0857e03668bb.css" />
     <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
 
     
-    <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Updating Mimikatz in Covenant"/>
+    <meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Updating Mimikatz in Covenant"/>
 <meta name="twitter:description" content="There&rsquo;s an issue on Covenant&rsquo;s GitHub asking how to update the bundled version of Mimikatz. This post will address that question and also outline how I went about finding the answer. I cloned the dev branch to look at this, because I really didn&rsquo;t feel like installing .NET Core 3.1 which main is still using. Running a mimikatz command, I can see the build is from Feb 2021.
 Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more accurately, Powerkatz) built-in."/>
 
@@ -22,6 +21,7 @@ Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more ac
 <meta property="og:url" content="https://offensivedefence.co.uk/posts/covenant-powerkatz/" /><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2022-05-13T10:38:32+01:00" />
 <meta property="article:modified_time" content="2022-05-13T10:38:32+01:00" />
+
 
 
   </head>

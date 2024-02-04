@@ -6,272 +6,196 @@
     <description>Recent content in Rasta Mouse on Offensive Defence</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 09 Aug 2023 09:21:07 +0100</lastBuildDate><atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 04 Feb 2024 13:39:41 +0000</lastBuildDate>
+    <atom:link href="https://offensivedefence.co.uk/authors/rastamouse/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Nt Token Theft</title>
+      <link>https://offensivedefence.co.uk/posts/nt-token-theft/</link>
+      <pubDate>Sun, 04 Feb 2024 13:39:41 +0000</pubDate>
+      <guid>https://offensivedefence.co.uk/posts/nt-token-theft/</guid>
+      <description>Intro Grzegorz Tworek recently published some C code demonstrating how to steal and impersonate Windows tokens from a process. The standard way to do this is with the OpenProcess, OpenProcessToken, DuplicateTokenEx, and ImpersonateLoggedOnUser APIs. Grzegorz shows how to achieve the same using Nt* APIs, specifically NtOpenProcess, NtOpenProcessToken, NtDuplicateToken, and NtSetInformationThread.&#xA;Because I&amp;rsquo;m a C# junky, I ported part of his code. This post will serve as a short walkthough on how to &amp;ldquo;getsystem&amp;rdquo; by stealing and impersonating the token of a SYSTEM process.</description>
+    </item>
     <item>
       <title>Cobalt Strike Process Inject Kit</title>
       <link>https://offensivedefence.co.uk/posts/cs-process-inject-kit/</link>
       <pubDate>Wed, 09 Aug 2023 09:21:07 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/cs-process-inject-kit/</guid>
       <description>Introduction I was scrolling through one of the social media dumpster fires the other day and whizzed past a post that caught my attention. The post itself was not paricularly novel - it was a process injection technique implemented as a Cobalt Strike Beacon Object File (BOF). I had a look at the included Aggressor script and noticed that it was registering a new command with beacon_command_register, reading a shellcode (.</description>
     </item>
-    
     <item>
       <title>Bypassing Defender with ThreatCheck &amp; Ghidra</title>
       <link>https://offensivedefence.co.uk/posts/threatcheck-ghidra/</link>
       <pubDate>Wed, 07 Jun 2023 10:16:02 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/threatcheck-ghidra/</guid>
       <description>Intro It should come as no surprise when payloads generated in their default state get swallowed up by Defender, as Microsoft have both the means and motivation to proactively produce signatures for open and closed source/commericial tooling. One tactic to get around these is to generate heavily obfuscated, compressed, or encrypted payloads which are unpacked at runtime. However, highly entropic payloads can be just as problematc. Daniel Bohannon and Lee Holmes also wrote a paper called Revoke-Obfuscation: PowerShell Obfuscation Detection Using Science which shows several methods for detecting obfuscated PowerShell scripts.</description>
     </item>
-    
     <item>
       <title>D/Invoke v1.0.5</title>
       <link>https://offensivedefence.co.uk/posts/dinvoke-105/</link>
       <pubDate>Sat, 15 Apr 2023 21:10:42 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dinvoke-105/</guid>
-      <description>This post summerises the recent changes to my D/Invoke fork.
-API Hashing API hashing is already available on methods such as GetLibraryAddress and GetExportAddress.
-var hAddress = Generic.GetLibraryAddress( &amp;#34;kernel32.dll&amp;#34;, &amp;#34;2B70CDC3FF17AB3948E01E1A318B8964&amp;#34;, 0xdeadbeef); or
-var hModule = Generic.GetLoadedModuleAddress(&amp;#34;kernel32.dll&amp;#34;); var hAddress = Generic.GetExportAddress( hModule, &amp;#34;2B70CDC3FF17AB3948E01E1A318B8964&amp;#34;, 0xdeadbeef); However, we have lacked a function that has allowed us to get a module handle by hash value. GetLoadedModuleAddress now has an additional overload to support this.</description>
+      <description>This post summerises the recent changes to my D/Invoke fork.&#xA;API Hashing API hashing is already available on methods such as GetLibraryAddress and GetExportAddress.&#xA;var hAddress = Generic.GetLibraryAddress( &amp;#34;kernel32.dll&amp;#34;, &amp;#34;2B70CDC3FF17AB3948E01E1A318B8964&amp;#34;, 0xdeadbeef); or&#xA;var hModule = Generic.GetLoadedModuleAddress(&amp;#34;kernel32.dll&amp;#34;); var hAddress = Generic.GetExportAddress( hModule, &amp;#34;2B70CDC3FF17AB3948E01E1A318B8964&amp;#34;, 0xdeadbeef); However, we have lacked a function that has allowed us to get a module handle by hash value. GetLoadedModuleAddress now has an additional overload to support this.</description>
     </item>
-    
     <item>
       <title>Custom Implicit &amp; Explicit Conversions in C#</title>
       <link>https://offensivedefence.co.uk/posts/implicit-explicit-conversions/</link>
       <pubDate>Thu, 29 Dec 2022 19:22:25 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/implicit-explicit-conversions/</guid>
-      <description>Implicit and explicited operators are provided as a means of converting one datatype to another.
-// this is an implicit conversion from an int to a double int i = 8; double d = i; // this is an explicit conversion from a double to an int double d = 8.8; int i = (int) d; I recently learned that you can implement your own implicit/explicit operators to convert custom classes, which is useful when needing to convert between API, domain and storage objects in an application.</description>
+      <description>Implicit and explicited operators are provided as a means of converting one datatype to another.&#xA;// this is an implicit conversion from an int to a double int i = 8; double d = i; // this is an explicit conversion from a double to an int double d = 8.8; int i = (int) d; I recently learned that you can implement your own implicit/explicit operators to convert custom classes, which is useful when needing to convert between API, domain and storage objects in an application.</description>
     </item>
-    
     <item>
       <title>The Information Security Kardashev Scale</title>
       <link>https://offensivedefence.co.uk/posts/kardashev/</link>
       <pubDate>Tue, 01 Nov 2022 10:22:58 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/kardashev/</guid>
-      <description>The Kardashev scale is a method of measuring a civilization&amp;rsquo;s level of technological advancement based on the amount of energy it is able to use. Kurzgesagt have a fun video on the subject if you&amp;rsquo;re not familiar with the premise.
-What Do Alien Civilizations Look Like? I found myself wondering if such a scale could be applied to those of us working in information security. To that end, I took a broad look at the type of connections I have across Twitter, LinkedIn, Discord, Slack, etc, and attempted to categorise them based on how their contributions have advanced the information security field.</description>
+      <description>The Kardashev scale is a method of measuring a civilization&amp;rsquo;s level of technological advancement based on the amount of energy it is able to use. Kurzgesagt have a fun video on the subject if you&amp;rsquo;re not familiar with the premise.&#xA;What Do Alien Civilizations Look Like? I found myself wondering if such a scale could be applied to those of us working in information security. To that end, I took a broad look at the type of connections I have across Twitter, LinkedIn, Discord, Slack, etc, and attempted to categorise them based on how their contributions have advanced the information security field.</description>
     </item>
-    
     <item>
       <title>NTLM Authentication with Firefox &amp; FoxyProxy</title>
       <link>https://offensivedefence.co.uk/posts/ntlm-auth-firefox/</link>
       <pubDate>Fri, 17 Jun 2022 09:57:19 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/ntlm-auth-firefox/</guid>
-      <description>It&amp;rsquo;s common for organisations to host internal web applications that are configured for single sign-on, backed by Active Directory. Even though Kerberos is becoming more common, NTLM is still more ubiquitous (especially for legacy apps). This short post will demonstate how to authenticate to a web app over a SOCKS proxy, using NTLM.
-I&amp;rsquo;m running the default IIS web page on a Windows Server. Under the Authentication settings, I&amp;rsquo;ve disabled Anonymous Auth and only enabled the NTLM provider under Windows Auth.</description>
+      <description>It&amp;rsquo;s common for organisations to host internal web applications that are configured for single sign-on, backed by Active Directory. Even though Kerberos is becoming more common, NTLM is still more ubiquitous (especially for legacy apps). This short post will demonstate how to authenticate to a web app over a SOCKS proxy, using NTLM.&#xA;I&amp;rsquo;m running the default IIS web page on a Windows Server. Under the Authentication settings, I&amp;rsquo;ve disabled Anonymous Auth and only enabled the NTLM provider under Windows Auth.</description>
     </item>
-    
     <item>
       <title>Updating Mimikatz in Covenant</title>
       <link>https://offensivedefence.co.uk/posts/covenant-powerkatz/</link>
       <pubDate>Fri, 13 May 2022 10:38:32 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/covenant-powerkatz/</guid>
-      <description>There&amp;rsquo;s an issue on Covenant&amp;rsquo;s GitHub asking how to update the bundled version of Mimikatz. This post will address that question and also outline how I went about finding the answer. I cloned the dev branch to look at this, because I really didn&amp;rsquo;t feel like installing .NET Core 3.1 which main is still using. Running a mimikatz command, I can see the build is from Feb 2021.
-Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more accurately, Powerkatz) built-in.</description>
+      <description>There&amp;rsquo;s an issue on Covenant&amp;rsquo;s GitHub asking how to update the bundled version of Mimikatz. This post will address that question and also outline how I went about finding the answer. I cloned the dev branch to look at this, because I really didn&amp;rsquo;t feel like installing .NET Core 3.1 which main is still using. Running a mimikatz command, I can see the build is from Feb 2021.&#xA;Covenant uses SharpSploit as a dependancy, which itself has Mimikatz (or more accurately, Powerkatz) built-in.</description>
     </item>
-    
     <item>
       <title>PPID Spoofing &amp; BlockDLLs with NtCreateUserProcess</title>
-      <link>https://offensivedefence.co.uk/posts/ntcreateuserprocess/</link>
+      <link>https://offensivedefence.co.uk/posts/nt-create-user-process/</link>
       <pubDate>Thu, 12 May 2022 17:26:06 +0100</pubDate>
-      
-      <guid>https://offensivedefence.co.uk/posts/ntcreateuserprocess/</guid>
-      <description>This week, Capt. Meelo released a great blog post on how to call the NtCreateUserProcess API as a substitue for the typical Win32 CreateProcess API. This post will build upon Meelo&amp;rsquo;s, so I highly encourage you to read it first.
-TL;DR, this code (not counting ntdll.h) is the bare minimum to spawn mmc.exe:
-#include &amp;lt;Windows.h&amp;gt; #include &amp;#34;ntdll.h&amp;#34; #pragma comment(lib, &amp;#34;ntdll&amp;#34;) int main() { UNICODE_STRING NtImagePath; RtlInitUnicodeString(&amp;amp;NtImagePath, (PWSTR)L&amp;#34;\\??\\C:\\Windows\\System32\\mmc.exe&amp;#34;); PRTL_USER_PROCESS_PARAMETERS ProcessParameters = NULL; RtlCreateProcessParametersEx(&amp;amp;ProcessParameters, &amp;amp;NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED); PS_CREATE_INFO CreateInfo = { 0 }; CreateInfo.</description>
+      <guid>https://offensivedefence.co.uk/posts/nt-create-user-process/</guid>
+      <description>This week, Capt. Meelo released a great blog post on how to call the NtCreateUserProcess API as a substitue for the typical Win32 CreateProcess API. This post will build upon Meelo&amp;rsquo;s, so I highly encourage you to read it first.&#xA;TL;DR, this code (not counting ntdll.h) is the bare minimum to spawn mmc.exe:&#xA;#include &amp;lt;Windows.h&amp;gt; #include &amp;#34;ntdll.h&amp;#34; #pragma comment(lib, &amp;#34;ntdll&amp;#34;) int main() { UNICODE_STRING NtImagePath; RtlInitUnicodeString(&amp;amp;NtImagePath, (PWSTR)L&amp;#34;\\??\\C:\\Windows\\System32\\mmc.exe&amp;#34;); PRTL_USER_PROCESS_PARAMETERS ProcessParameters = NULL; RtlCreateProcessParametersEx(&amp;amp;ProcessParameters, &amp;amp;NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED); PS_CREATE_INFO CreateInfo = { 0 }; CreateInfo.</description>
     </item>
-    
     <item>
       <title>Building an API Client from Swagger</title>
       <link>https://offensivedefence.co.uk/posts/openapi-client-swagger/</link>
       <pubDate>Fri, 18 Feb 2022 20:14:12 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/openapi-client-swagger/</guid>
-      <description>This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client. We&amp;rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &amp;ldquo;people&amp;rdquo;.
-API Server This is the model to represent a person object, which will sit at the domain layer. Each person will have a unquie Id (think of this as a primary key in database parlance).</description>
+      <description>This post will demonstrate how to utiltise an OpenAPI definition from Swagger to build a .NET client. We&amp;rsquo;ll start off by throwing together a simple REST API in ASP.NET Core to create, get, update and delete &amp;ldquo;people&amp;rdquo;.&#xA;API Server This is the model to represent a person object, which will sit at the domain layer. Each person will have a unquie Id (think of this as a primary key in database parlance).</description>
     </item>
-    
     <item>
       <title>Notepad&#43;&#43; Plugins for Persistence</title>
       <link>https://offensivedefence.co.uk/posts/notepad&#43;&#43;/</link>
       <pubDate>Sat, 29 Jan 2022 15:54:31 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/notepad&#43;&#43;/</guid>
-      <description>Notepad++ is a popular Windows text editor, which has an extension capability in the way of plugins. The Plugin Manager allows users to download and install approved plugins, but you can also install your own plugins locally. A plugin can be built in a variety of languages including C++ and C#.
-To install a custom plugin, the DLL can simply be dropped inside %PROGRAMFILES%\Notepad++\plugins\pluginName\pluginName.dll. The up-side is that no user interaction is required to load or activate the plugin.</description>
+      <description>Notepad++ is a popular Windows text editor, which has an extension capability in the way of plugins. The Plugin Manager allows users to download and install approved plugins, but you can also install your own plugins locally. A plugin can be built in a variety of languages including C++ and C#.&#xA;To install a custom plugin, the DLL can simply be dropped inside %PROGRAMFILES%\Notepad++\plugins\pluginName\pluginName.dll. The up-side is that no user interaction is required to load or activate the plugin.</description>
     </item>
-    
     <item>
       <title>Lateral Movement 101</title>
       <link>https://offensivedefence.co.uk/posts/lateral-movement-101/</link>
       <pubDate>Tue, 12 Oct 2021 09:25:13 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/lateral-movement-101/</guid>
-      <description>This post was requested by a Patron and will provide a crash course in lateral movement techniques on Windows using both native utilities and custom C# tooling.
-The most common lateral movement techniques are performed via legitimate management channels including Remote Desktop (RDP), Windows Remote Management (WinRM) and Windows Management Instrumentation (WMI). Platforms such as Windows Server Update Services (WSUS) and System Center Configuration Manager (SCCM) can also be abused.</description>
+      <description>This post was requested by a Patron and will provide a crash course in lateral movement techniques on Windows using both native utilities and custom C# tooling.&#xA;The most common lateral movement techniques are performed via legitimate management channels including Remote Desktop (RDP), Windows Remote Management (WinRM) and Windows Management Instrumentation (WMI). Platforms such as Windows Server Update Services (WSUS) and System Center Configuration Manager (SCCM) can also be abused.</description>
     </item>
-    
     <item>
       <title>C# Process Class Primer</title>
       <link>https://offensivedefence.co.uk/posts/csharp-process-class/</link>
       <pubDate>Wed, 22 Sep 2021 10:11:26 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/csharp-process-class/</guid>
-      <description>This post was requested from a Patron and will serve as a short primer for using the Process class in C#. This class is part of the System.Diagnostics namespace and is useful for enumerating, starting, and killing processes on a system.
-Enumerating Processes The Process class has 4 methods for enumerating processes on a system (which are quite self-explanatory):
-GetCurrentProcess GetProcessesByName GetProcessById GetProcesses Process.GetProcesses() will return a Process[] of every process running on the local system.</description>
+      <description>This post was requested from a Patron and will serve as a short primer for using the Process class in C#. This class is part of the System.Diagnostics namespace and is useful for enumerating, starting, and killing processes on a system.&#xA;Enumerating Processes The Process class has 4 methods for enumerating processes on a system (which are quite self-explanatory):&#xA;GetCurrentProcess GetProcessesByName GetProcessById GetProcesses Process.GetProcesses() will return a Process[] of every process running on the local system.</description>
     </item>
-    
     <item>
       <title>AWS Status Portal, Terraform &amp; Ansible</title>
       <link>https://offensivedefence.co.uk/posts/aws-portal-terraform/</link>
       <pubDate>Tue, 13 Jul 2021 13:43:11 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/aws-portal-terraform/</guid>
-      <description>[Skip to the bottom of the page for the video demo]
-In a previous blog post, I outlined how to build a status portal for EC2 instances running in AWS. The portal itself was a Blazor app which used the AWS SDK to interact with (list/start/stop) the virtual machines.
-Heath Adams posted a question to Twitter about building a CMS that could use AWS and Terraform to manage lab deployments.</description>
+      <description>[Skip to the bottom of the page for the video demo]&#xA;In a previous blog post, I outlined how to build a status portal for EC2 instances running in AWS. The portal itself was a Blazor app which used the AWS SDK to interact with (list/start/stop) the virtual machines.&#xA;Heath Adams posted a question to Twitter about building a CMS that could use AWS and Terraform to manage lab deployments.</description>
     </item>
-    
     <item>
       <title>Domain Enumeration Tool</title>
       <link>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</link>
       <pubDate>Wed, 28 Apr 2021 16:32:31 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/domain-enumeration-tool/</guid>
-      <description>Introduction A couple of days ago (obviously at the time of writing this post), FortyNorth Security tweeted about a new tool they were releasing called EDD (Enumerate Domain Data). This is a .NET Console Application that aims to provide a .NET alternative to the kind of domain enumeration that PowerView is well known for (a bit like SharpView).
-I spent some time looking at the EDD codebase and ended up submitting a fairly substantial PR.</description>
+      <description>Introduction A couple of days ago (obviously at the time of writing this post), FortyNorth Security tweeted about a new tool they were releasing called EDD (Enumerate Domain Data). This is a .NET Console Application that aims to provide a .NET alternative to the kind of domain enumeration that PowerView is well known for (a bit like SharpView).&#xA;I spent some time looking at the EDD codebase and ended up submitting a fairly substantial PR.</description>
     </item>
-    
     <item>
       <title>gRPC Attack Surface</title>
       <link>https://offensivedefence.co.uk/posts/grpc-attack-surface/</link>
       <pubDate>Fri, 26 Mar 2021 11:33:01 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/grpc-attack-surface/</guid>
-      <description>In this post we&amp;rsquo;ll look at methods to analyse the attack surface of gRPC services. It won&amp;rsquo;t focus on specific vulnerabilities.
-(Google) Remote Procedure Calls gRPC is an open source RPC system developed at Google. You can think of gRPC services like APIs, although there are many key differences. Where APIs typically use JSON or XML, gRPC uses protocol buffers (protobufs) to serialise data being sent between a client and server.</description>
+      <description>In this post we&amp;rsquo;ll look at methods to analyse the attack surface of gRPC services. It won&amp;rsquo;t focus on specific vulnerabilities.&#xA;(Google) Remote Procedure Calls gRPC is an open source RPC system developed at Google. You can think of gRPC services like APIs, although there are many key differences. Where APIs typically use JSON or XML, gRPC uses protocol buffers (protobufs) to serialise data being sent between a client and server.</description>
     </item>
-    
     <item>
       <title>AWS Status Portal</title>
       <link>https://offensivedefence.co.uk/posts/aws-status-portal/</link>
       <pubDate>Sun, 14 Feb 2021 09:46:31 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/aws-status-portal/</guid>
-      <description>Intro I recently took an interest in the AWS Visual Studio extension and the AWS .NET Core SDK, and came up with this mini-project to showcase some of the neat things you can do with them. This post will show you how to build a (very basic) EC2 status monitoring portal in Blazor.
-We&amp;rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later).</description>
+      <description>Intro I recently took an interest in the AWS Visual Studio extension and the AWS .NET Core SDK, and came up with this mini-project to showcase some of the neat things you can do with them. This post will show you how to build a (very basic) EC2 status monitoring portal in Blazor.&#xA;We&amp;rsquo;ll use the AWS SDK to query, start and stop instances; and CloudWatch and Lambda to trigger a custom webhook on EC2 status-changed events (the reason for that will become clear later).</description>
     </item>
-    
     <item>
       <title>Syscalls with D/Invoke</title>
       <link>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</link>
       <pubDate>Sun, 24 Jan 2021 15:19:05 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dinvoke-syscalls/</guid>
-      <description>Windows Architecture Primer x86 processors have 4 privilege levels, known as rings, that control access to memory and CPU operations. They range from Ring 0, the most privileged, to Ring 3.
-Image credit: Wikipedia
-Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example.</description>
+      <description>Windows Architecture Primer x86 processors have 4 privilege levels, known as rings, that control access to memory and CPU operations. They range from Ring 0, the most privileged, to Ring 3.&#xA;Image credit: Wikipedia&#xA;Windows only supports Rings 0 and 3, affectionately known as Kernel and User Mode respectively. The majority of user activity will occur in Ring 3 but applications may cross into Ring 0 when calling a variety of APIs - this is required when accessing the filesystem for example.</description>
     </item>
-    
     <item>
       <title>Embedding Resources with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</link>
       <pubDate>Thu, 31 Dec 2020 12:00:45 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-embedded-resources/</guid>
-      <description>Intro In this post, I&amp;rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.
-Injector Template I&amp;rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&amp;rsquo;s embedded within it and then inject it into a target process.
-using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&amp;#34;Shellcode&amp;#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly.</description>
+      <description>Intro In this post, I&amp;rsquo;ll demonstrate how dnlib can be used to add embedded resources to an assembly.&#xA;Injector Template I&amp;rsquo;ve chosen a process injection scenario - where our application will retrieve shellcode that&amp;rsquo;s embedded within it and then inject it into a target process.&#xA;using System; using System.Diagnostics; using System.IO; using System.Reflection; using System.Runtime.InteropServices; namespace DemoApp { class Program { static void Main(string[] args) { var shellcode = GetEmbeddedResource(&amp;#34;Shellcode&amp;#34;); Inject(shellcode); } static byte[] GetEmbeddedResource(string resourceName) { var self = Assembly.</description>
     </item>
-    
     <item>
       <title>DLL&#39;s to EXE&#39;s with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</link>
       <pubDate>Wed, 30 Dec 2020 20:25:03 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-dll-to-exe/</guid>
-      <description>Intro Continuing with my dnlib kick, this post will demonstrate how to &amp;ldquo;convert&amp;rdquo; a .NET DLL to an EXE. We&amp;rsquo;ll use the same DLL code as in the previous post.
-using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&amp;#34;Hello from DemoDLL&amp;#34;); } } } If you&amp;rsquo;ve dabbled in C# enough, you&amp;rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.</description>
+      <description>Intro Continuing with my dnlib kick, this post will demonstrate how to &amp;ldquo;convert&amp;rdquo; a .NET DLL to an EXE. We&amp;rsquo;ll use the same DLL code as in the previous post.&#xA;using System.Windows.Forms; namespace DemoDLL { public class Demo { public static void Execute() { MessageBox.Show(&amp;#34;Hello from DemoDLL&amp;#34;); } } } If you&amp;rsquo;ve dabbled in C# enough, you&amp;rsquo;ll likely already know that within IDEs (such as Visual Studio), you can easily toggle the output type of a C# app between Console Application, Windows Application and Class Library.</description>
     </item>
-    
     <item>
       <title>Adding DLL Exports with dnlib</title>
       <link>https://offensivedefence.co.uk/posts/dnlib-dllexport/</link>
       <pubDate>Tue, 29 Dec 2020 10:38:26 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/dnlib-dllexport/</guid>
-      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.
-I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.
-Starting from a .</description>
+      <description>Intro dnlib is an insanely powerful library for reading and writing .NET assemblies. It can be used to modify existing assemblies or even create new ones from scratch. It&amp;rsquo;s also used within other .NET modification/disassembly packages such as ConfuserEx and dnSpy.&#xA;I&amp;rsquo;m in the process of porting the SharpC2 payload generation capabilities from using roslyn to dnlib, and thought I would write about a fun use case.&#xA;Starting from a .</description>
     </item>
-    
     <item>
       <title>AppDomain.AssemblyResolve</title>
       <link>https://offensivedefence.co.uk/posts/assembly-resolve/</link>
       <pubDate>Mon, 21 Dec 2020 12:06:54 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/assembly-resolve/</guid>
-      <description>Intro Jean Maes posted a blog entitled &amp;ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&amp;rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.
-For a decent background, I encourage readers to review Jean&amp;rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it.</description>
+      <description>Intro Jean Maes posted a blog entitled &amp;ldquo;A tale of .NET assemblies, cobalt strike size constraints, and reflection&amp;rdquo;, which looked at how to use the AssemblyResolve event to locate .NET dependancies at runtime that were not already weaved into an assembly or located in the GAC.&#xA;For a decent background, I encourage readers to review Jean&amp;rsquo;s post. Since the author credits me for pointing them towards the event, I thought it would be informative to write about the scenario under which I came across it.</description>
     </item>
-    
     <item>
       <title>D/Invokify PPID Spoofy &amp; BlockDLLs</title>
       <link>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</link>
       <pubDate>Wed, 02 Dec 2020 10:52:26 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/ppidspoof-blockdlls-dinvoke/</guid>
-      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).
-This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
+      <description>Intro The EXTENDED_STARTUPINFO_PRESENT process creation flag is used by the Windows CreateProcess, CreateProcessAsUser, CreateProcessWithLogonW and CreateProcessWithTokenW APIs. A common use case for attackers and malware is to specify a PROC_THREAD_ATTRIBUTE_PARENT_PROCESS attribute (for PPID spoofing) and a PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY attribute (for BlockDLLs).&#xA;This has long been achievable in both native code and managed code (via P/Invoke), but has been somewhat elusive when it comes to D/Invoke. D/Invoke has numerous advantages over P/Invoke (from a .</description>
     </item>
-    
     <item>
       <title>Module Stomping in C#</title>
       <link>https://offensivedefence.co.uk/posts/module-stomping/</link>
       <pubDate>Fri, 20 Nov 2020 16:22:10 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/module-stomping/</guid>
-      <description>A little while ago I published what I described as a &amp;ldquo;barely functional module stomping in C#&amp;rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.
-Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.
-What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</description>
+      <description>A little while ago I published what I described as a &amp;ldquo;barely functional module stomping in C#&amp;rdquo; proof of concept. It had a couple of (pretty bad) issues - the shellcode would execute multiple times and then crash the host process.&#xA;Ceri took an interest in the code, so we worked together to make it stable and to co-author this blog post.&#xA;What is Module Stomping? Module Stomping (which also seems to go by the names Module Overloading and DLL Hollowing), is a shellcode injection technique that works thusly:</description>
     </item>
-    
     <item>
       <title>Using Custom Covenant Listener Profiles &amp; Grunt Templates to Elude AV</title>
       <link>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</link>
       <pubDate>Sat, 07 Nov 2020 11:54:14 +0000</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/covenant-profiles-templates/</guid>
       <description>Whenever we download an offensive tool from the Internet, it comes as no surprise when it gets snapped up by an anti-virus solution. AV vendors are certainly keeping a keen eye on tools posted publicly (insert conspiracy theory about Microsoft owning GitHub) and are reacting relatively quickly to push signatures for those tools. However, it&amp;rsquo;s probably fair to say that these signatures are not particularly robust, and only really serve to catch those that don&amp;rsquo;t have the skills or knowledge to make the necesary modifications.</description>
     </item>
-    
     <item>
       <title>Making AMSI Jump</title>
       <link>https://offensivedefence.co.uk/posts/making-amsi-jump/</link>
       <pubDate>Tue, 16 Jun 2020 10:52:27 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/making-amsi-jump/</guid>
-      <description>Since 3.13, Cobalt Strike has had a Malleable C2 option called amsi_disable. This directive tells Beacon to patch the AmsiScanBuffer function in the host process prior to injecting post-ex capabilities such as powerpick and execute-assembly. This limits AMSI&amp;rsquo;s visibility of said process and (hopefully) prevents the PowerShell / .NET assemblies being executed from being scanned.
-One set of workflows that amsi_disable does not apply to, are the new (as of 4.</description>
+      <description>Since 3.13, Cobalt Strike has had a Malleable C2 option called amsi_disable. This directive tells Beacon to patch the AmsiScanBuffer function in the host process prior to injecting post-ex capabilities such as powerpick and execute-assembly. This limits AMSI&amp;rsquo;s visibility of said process and (hopefully) prevents the PowerShell / .NET assemblies being executed from being scanned.&#xA;One set of workflows that amsi_disable does not apply to, are the new (as of 4.</description>
     </item>
-    
     <item>
       <title>SharpSploit v1.6 Updates</title>
       <link>https://offensivedefence.co.uk/posts/sharpsploit-16/</link>
       <pubDate>Tue, 09 Jun 2020 13:12:56 +0100</pubDate>
-      
       <guid>https://offensivedefence.co.uk/posts/sharpsploit-16/</guid>
-      <description>Ryan Cobb has just tagged the release of SharpSploit v1.6, which comes with a number of cool changes. The most significant of which includes some very clever Dynamic Invocation functionality that TheWover has blogged about. My contributions were relatively minor and will be the subject of this post.
-Enhanced WMI Output SharpSploit has had a WMIExecute method in the SharpSploit.LateralMovement namespace for as long as I can remember. It took in a target ComputerName, a Command to execute and optional plaintext creds, but it returned a bool.</description>
+      <description>Ryan Cobb has just tagged the release of SharpSploit v1.6, which comes with a number of cool changes. The most significant of which includes some very clever Dynamic Invocation functionality that TheWover has blogged about. My contributions were relatively minor and will be the subject of this post.&#xA;Enhanced WMI Output SharpSploit has had a WMIExecute method in the SharpSploit.LateralMovement namespace for as long as I can remember. It took in a target ComputerName, a Command to execute and optional plaintext creds, but it returned a bool.</description>
     </item>
-    
   </channel>
 </rss>

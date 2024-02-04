@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>PPID Spoofing &amp; BlockDLLs with NtCreateUserProcess - Offensive Defence</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.122.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://offensivedefence.co.uk/css/main.min.d06e7fa8ea7411023f3fd96c3532209c4fc849199c44396e531a0857e03668bb.css" />
+    <script src="https://kit.fontawesome.com/89e1a73a2b.js" crossorigin="anonymous"></script>
+
+    
+    <meta name="twitter:card" content="summary"/><meta name="twitter:title" content="PPID Spoofing &amp; BlockDLLs with NtCreateUserProcess"/>
+<meta name="twitter:description" content="This week, Capt. Meelo released a great blog post on how to call the NtCreateUserProcess API as a substitue for the typical Win32 CreateProcess API. This post will build upon Meelo&rsquo;s, so I highly encourage you to read it first.
+TL;DR, this code (not counting ntdll.h) is the bare minimum to spawn mmc.exe:
+#include &lt;Windows.h&gt; #include &#34;ntdll.h&#34; #pragma comment(lib, &#34;ntdll&#34;) int main() { UNICODE_STRING NtImagePath; RtlInitUnicodeString(&amp;NtImagePath, (PWSTR)L&#34;\\??\\C:\\Windows\\System32\\mmc.exe&#34;); PRTL_USER_PROCESS_PARAMETERS ProcessParameters = NULL; RtlCreateProcessParametersEx(&amp;ProcessParameters, &amp;NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED); PS_CREATE_INFO CreateInfo = { 0 }; CreateInfo."/>
+
+    <meta property="og:title" content="PPID Spoofing &amp; BlockDLLs with NtCreateUserProcess" />
+<meta property="og:description" content="This week, Capt. Meelo released a great blog post on how to call the NtCreateUserProcess API as a substitue for the typical Win32 CreateProcess API. This post will build upon Meelo&rsquo;s, so I highly encourage you to read it first.
+TL;DR, this code (not counting ntdll.h) is the bare minimum to spawn mmc.exe:
+#include &lt;Windows.h&gt; #include &#34;ntdll.h&#34; #pragma comment(lib, &#34;ntdll&#34;) int main() { UNICODE_STRING NtImagePath; RtlInitUnicodeString(&amp;NtImagePath, (PWSTR)L&#34;\\??\\C:\\Windows\\System32\\mmc.exe&#34;); PRTL_USER_PROCESS_PARAMETERS ProcessParameters = NULL; RtlCreateProcessParametersEx(&amp;ProcessParameters, &amp;NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED); PS_CREATE_INFO CreateInfo = { 0 }; CreateInfo." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://offensivedefence.co.uk/posts/nt-create-user-process/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2022-05-12T17:26:06+01:00" />
+<meta property="article:modified_time" content="2022-05-12T17:26:06+01:00" />
+
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://offensivedefence.co.uk"><img class="app-header-avatar" src="/avatar.png" alt="John Doe" /></a>
+      <h1>Offensive Defence</h1>
+      <p>&#34;The hand which strikes also blocks.&#34;</p>
+
+    </header>
+    <main class="app-container">
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class ="post-title">PPID Spoofing &amp; BlockDLLs with NtCreateUserProcess</h1>
+      <div class="post-meta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-link">
+  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+</svg>
+              <a class="tag" href="https://offensivedefence.co.uk/authors/rastamouse/">Rasta Mouse</a>
+        
+      
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar">
+  <title>calendar</title>
+  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+          May 12, 2022
+        </div>
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg>
+          4 min read
+        </div></div>
+    </header>
+    <div class="post-content">
+      <p>This week, <a href="https://twitter.com/CaptMeelo">Capt. Meelo</a> released a great <a href="https://captmeelo.com/redteam/maldev/2022/05/10/ntcreateuserprocess.html">blog post</a> on how to call the NtCreateUserProcess API as a substitue for the typical Win32 <a href="https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw">CreateProcess</a> API.  This post will build upon Meelo&rsquo;s, so I highly encourage you to read it first.</p>
+<p>TL;DR, this code (not counting <code>ntdll.h</code>) is the bare minimum to spawn <code>mmc.exe</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;Windows.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;ntdll.h&#34;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#pragma comment(lib, &#34;ntdll&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	UNICODE_STRING NtImagePath;
+</span></span><span style="display:flex;"><span>	RtlInitUnicodeString(<span style="color:#f92672">&amp;</span>NtImagePath, (PWSTR)<span style="color:#e6db74">L</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">??</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">C:</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">Windows</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">System32</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">mmc.exe&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	PRTL_USER_PROCESS_PARAMETERS ProcessParameters <span style="color:#f92672">=</span> NULL;
+</span></span><span style="display:flex;"><span>	RtlCreateProcessParametersEx(<span style="color:#f92672">&amp;</span>ProcessParameters, <span style="color:#f92672">&amp;</span>NtImagePath, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	PS_CREATE_INFO CreateInfo <span style="color:#f92672">=</span> { <span style="color:#ae81ff">0</span> };
+</span></span><span style="display:flex;"><span>	CreateInfo.Size <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(CreateInfo);
+</span></span><span style="display:flex;"><span>	CreateInfo.State <span style="color:#f92672">=</span> PsCreateInitialState;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	PPS_ATTRIBUTE_LIST AttributeList <span style="color:#f92672">=</span> (PS_ATTRIBUTE_LIST<span style="color:#f92672">*</span>)RtlAllocateHeap(RtlProcessHeap(), HEAP_ZERO_MEMORY, <span style="color:#66d9ef">sizeof</span>(PS_ATTRIBUTE));
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>TotalLength <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(PS_ATTRIBUTE_LIST);
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">0</span>].Attribute <span style="color:#f92672">=</span> PS_ATTRIBUTE_IMAGE_NAME;
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">0</span>].Size <span style="color:#f92672">=</span> NtImagePath.Length;
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">0</span>].Value <span style="color:#f92672">=</span> (ULONG_PTR)NtImagePath.Buffer;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	HANDLE hProcess, hThread <span style="color:#f92672">=</span> NULL;
+</span></span><span style="display:flex;"><span>	NtCreateUserProcess(<span style="color:#f92672">&amp;</span>hProcess, <span style="color:#f92672">&amp;</span>hThread, PROCESS_ALL_ACCESS, THREAD_ALL_ACCESS, NULL, NULL, NULL, NULL, ProcessParameters, <span style="color:#f92672">&amp;</span>CreateInfo, AttributeList);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	RtlFreeHeap(RtlProcessHeap(), <span style="color:#ae81ff">0</span>, AttributeList);
+</span></span><span style="display:flex;"><span>	RtlDestroyProcessParameters(ProcessParameters);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>If you&rsquo;re going to use this technique as part of an attack toolchain, integrating PPID spoofing and/or BlockDLLs are potentially useful.  This is something we&rsquo;ve known how to do with the CreateProcess API for a <a href="https://gist.github.com/rasta-mouse/af009f49229c856dc26e3a243db185ec">long time</a>, but there&rsquo;s not much consumable information about how to do this with NtCreateUserProcess.</p>
+<blockquote>
+<blockquote>
+<p>Before we continue, note that I made the following modifications to Meelo&rsquo;s PoC:</p>
+<ol>
+<li>Reduced the default <code>PS_ATTRIBUTE</code> array size from 2 to 1 in <code>ntdll.h:1305</code>.</li>
+<li>Changed <code>AttributeList-&gt;TotalLength</code> from <code>sizeof(PS_ATTRIBUTE_LIST) - sizeof(PS_ATTRIBUTE)</code> to <code>sizeof(PS_ATTRIBUTE_LIST)</code> in <code>main.cpp:19</code>.</li>
+</ol>
+</blockquote>
+</blockquote>
+<p>This just helps us keep track a little easier of how many process attributes we&rsquo;re providing and the buffer size required to hold them.  In this PoC, we only have 1 attribute:  <code>PS_ATTRIBUTE_IMAGE_NAME</code> which points to the <code>NtImagePath</code> of the process we want to start.  As such, the <code>PS_ATTRIBUTE</code> array size only needs to be 1; the call to <code>RtlAllocateHeap</code> only needs to allocate enough for 1 <code>PS_ATTRIBUTE</code> (<code>sizeof(PS_ATTRIBUTE)</code>); and therefore the <code>AttributeList-&gt;TotalLength</code> is simply <code>sizeof(PS_ATTRIBUTE_LIST)</code>.  In short, we shouldn&rsquo;t need to take off the size of <code>PS_ATTRIBUTE</code> because our array size is larger than it needs to be.</p>
+<h2 id="parent-process">Parent Process</h2>
+<p>To spawn a process as a child of another process, we use the <code>PsAttributeParentProcess</code> <code>PS_ATTRIBUTE_NUM</code> and provide the HANDLE to the parent.  This could be done with <code>NtOpenProcess</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>OBJECT_ATTRIBUTES oa;
+</span></span><span style="display:flex;"><span>InitializeObjectAttributes(<span style="color:#f92672">&amp;</span>oa, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CLIENT_ID cid <span style="color:#f92672">=</span> { (HANDLE)<span style="color:#ae81ff">10104</span>, NULL };
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>HANDLE hParent <span style="color:#f92672">=</span> NULL;
+</span></span><span style="display:flex;"><span>NtOpenProcess(<span style="color:#f92672">&amp;</span>hParent, PROCESS_ALL_ACCESS, <span style="color:#f92672">&amp;</span>oa, <span style="color:#f92672">&amp;</span>cid);
+</span></span></code></pre></div><blockquote>
+<blockquote>
+<p>Note: I&rsquo;ve just hardcoded 10104, whch is the PID for explorer.exe.</p>
+</blockquote>
+</blockquote>
+<p>Because we&rsquo;re adding a new attribute, we need to bump the <code>PS_ATTRIBUTE</code> size back to up 2; and the call to <code>RtlAllocateHeap</code> now needs to allocate enough room for <strong>2</strong> <code>PS_ATTRIBUTE</code>&rsquo;s, i.e:  <code>sizeof(PS_ATTRIBUTE)*2</code>.</p>
+<p>The attributes to add are simple:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">1</span>].Attribute <span style="color:#f92672">=</span> PS_ATTRIBUTE_PARENT_PROCESS;
+</span></span><span style="display:flex;"><span>AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">1</span>].Size <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(HANDLE);
+</span></span><span style="display:flex;"><span>AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">1</span>].ValuePtr <span style="color:#f92672">=</span> hParent;
+</span></span></code></pre></div><p>Where <code>PS_ATTRIBUTE_PARENT_PROCESS</code> is already defined in <code>ntdll.h</code>.</p>
+<p><img src="/images/ntcreateuserprocess/mmc-parent.png" alt="" title="PPID Spoof"></p>
+<h2 id="blockdlls">BlockDLLs</h2>
+<p>To add a process mitigation policy, we need the <code>PsAttributeMitigationOptions</code> <code>PS_ATTRIBUTE_NUM</code>, however the macro defined in Meelo&rsquo;s <code>ntdll.h</code> is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#75715e">#define PS_ATTRIBUTE_MITIGATION_OPTIONS \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    PsAttributeValue(PsAttributeMitigationOptions, FALSE, TRUE, TRUE)
+</span></span></span></code></pre></div><p>This produces a value of <code>0x60010</code>, but <a href="https://twitter.com/passthehashbrwn">@passthehashbrwn</a> pointed out on Twitter that the value required to make BlockDLLs work is acually <code>0x20010</code>.  You can of course just hardcode this value, but I also found you can arrive there using:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#75715e">#define PS_ATTRIBUTE_MITIGATION_OPTIONS_2 \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    PsAttributeValue(PsAttributeMitigationOptions, FALSE, TRUE, FALSE)
+</span></span></span></code></pre></div><p>As before, adding the attributes is simple:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span>DWORD64 policy <span style="color:#f92672">=</span> PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">2</span>].Attribute <span style="color:#f92672">=</span> PS_ATTRIBUTE_MITIGATION_OPTIONS_2;
+</span></span><span style="display:flex;"><span>AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">2</span>].Size <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(DWORD64);
+</span></span><span style="display:flex;"><span>AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">2</span>].ValuePtr <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>policy;
+</span></span></code></pre></div><p><img src="/images/ntcreateuserprocess/mmc-blockdlls.png" alt="" title="BlockDLLs"></p>
+<h2 id="final-code">Final Code</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c++" data-lang="c++"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;Windows.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;ntdll.h&#34;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#pragma comment(lib, &#34;ntdll&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// define strings
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	UNICODE_STRING NtImagePath, CurrentDirectory, CommandLine;
+</span></span><span style="display:flex;"><span>	RtlInitUnicodeString(<span style="color:#f92672">&amp;</span>NtImagePath, (PWSTR)<span style="color:#e6db74">L</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">??</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">C:</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">Windows</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">System32</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">mmc.exe&#34;</span>);
+</span></span><span style="display:flex;"><span>	RtlInitUnicodeString(<span style="color:#f92672">&amp;</span>CurrentDirectory, (PWSTR)<span style="color:#e6db74">L</span><span style="color:#e6db74">&#34;C:</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">Windows</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">System32&#34;</span>);
+</span></span><span style="display:flex;"><span>	RtlInitUnicodeString(<span style="color:#f92672">&amp;</span>CommandLine, (PWSTR)<span style="color:#e6db74">L</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">C:</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">Windows</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">System32</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">mmc.exe</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// user process parameters
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	PRTL_USER_PROCESS_PARAMETERS ProcessParameters <span style="color:#f92672">=</span> NULL;
+</span></span><span style="display:flex;"><span>	RtlCreateProcessParametersEx(<span style="color:#f92672">&amp;</span>ProcessParameters, <span style="color:#f92672">&amp;</span>NtImagePath, NULL, <span style="color:#f92672">&amp;</span>CurrentDirectory, <span style="color:#f92672">&amp;</span>CommandLine, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// process create info
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	PS_CREATE_INFO CreateInfo <span style="color:#f92672">=</span> { <span style="color:#ae81ff">0</span> };
+</span></span><span style="display:flex;"><span>	CreateInfo.Size <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(CreateInfo);
+</span></span><span style="display:flex;"><span>	CreateInfo.State <span style="color:#f92672">=</span> PsCreateInitialState;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// initialise attribute list
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	PPS_ATTRIBUTE_LIST AttributeList <span style="color:#f92672">=</span> (PS_ATTRIBUTE_LIST<span style="color:#f92672">*</span>)RtlAllocateHeap(RtlProcessHeap(), HEAP_ZERO_MEMORY, <span style="color:#66d9ef">sizeof</span>(PS_ATTRIBUTE)<span style="color:#f92672">*</span><span style="color:#ae81ff">3</span>);
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>TotalLength <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(PS_ATTRIBUTE_LIST);
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// set image name
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">0</span>].Attribute <span style="color:#f92672">=</span> PS_ATTRIBUTE_IMAGE_NAME;
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">0</span>].Size <span style="color:#f92672">=</span> NtImagePath.Length;
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">0</span>].Value <span style="color:#f92672">=</span> (ULONG_PTR)NtImagePath.Buffer;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// obtain handle to parent
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	OBJECT_ATTRIBUTES oa;
+</span></span><span style="display:flex;"><span>	InitializeObjectAttributes(<span style="color:#f92672">&amp;</span>oa, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	CLIENT_ID cid <span style="color:#f92672">=</span> { (HANDLE)<span style="color:#ae81ff">10104</span>, NULL };
+</span></span><span style="display:flex;"><span>	
+</span></span><span style="display:flex;"><span>	HANDLE hParent <span style="color:#f92672">=</span> NULL;
+</span></span><span style="display:flex;"><span>	NtOpenProcess(<span style="color:#f92672">&amp;</span>hParent, PROCESS_ALL_ACCESS, <span style="color:#f92672">&amp;</span>oa, <span style="color:#f92672">&amp;</span>cid);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// add parent process attribute
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">1</span>].Attribute <span style="color:#f92672">=</span> PS_ATTRIBUTE_PARENT_PROCESS;
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">1</span>].Size <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(HANDLE);
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">1</span>].ValuePtr <span style="color:#f92672">=</span> hParent;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// blockdlls policy
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	DWORD64 policy <span style="color:#f92672">=</span> PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// add process mitigation atribute
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">2</span>].Attribute <span style="color:#f92672">=</span> PS_ATTRIBUTE_MITIGATION_OPTIONS_2;
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">2</span>].Size <span style="color:#f92672">=</span> <span style="color:#66d9ef">sizeof</span>(DWORD64);
+</span></span><span style="display:flex;"><span>	AttributeList<span style="color:#f92672">-&gt;</span>Attributes[<span style="color:#ae81ff">2</span>].ValuePtr <span style="color:#f92672">=</span> <span style="color:#f92672">&amp;</span>policy;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// spawn process
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	HANDLE hProcess, hThread <span style="color:#f92672">=</span> NULL;
+</span></span><span style="display:flex;"><span>	NtCreateUserProcess(<span style="color:#f92672">&amp;</span>hProcess, <span style="color:#f92672">&amp;</span>hThread, PROCESS_ALL_ACCESS, THREAD_ALL_ACCESS, NULL, NULL, NULL, NULL, ProcessParameters, <span style="color:#f92672">&amp;</span>CreateInfo, AttributeList);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// close handle to parent
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	CloseHandle(hParent);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// free allocated memory
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	RtlFreeHeap(RtlProcessHeap(), <span style="color:#ae81ff">0</span>, AttributeList);
+</span></span><span style="display:flex;"><span>	RtlDestroyProcessParameters(ProcessParameters);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="conclusion">Conclusion</h2>
+<p>This post demonstrated how to spawn a process with PPID Spoofing and BlockDLLs using the NtCreateUserProcess API.</p>
+<blockquote>
+<blockquote>
+<p>CreateProcessW is dead, long live NtCreateUserProcess.</p>
+</blockquote>
+</blockquote>
+<p>Shout-out to @CaptMeelo and @passthehashbrwn.</p>
+
+    </div>
+    <div class="post-footer">
+      
+    </div>
+  </article>
+
+    </main>
+  </body>
+</html>
